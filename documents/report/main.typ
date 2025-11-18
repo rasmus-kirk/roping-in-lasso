@@ -22,28 +22,16 @@
 )
 #show ref: set text(fill: theme.fg1)
 #show: ilm.with(
-  title: [Zero to Lasso],
+  title: [Bulletproofs to Lasso],
   author: "Rasmus Kirk Jakobsen",
   date: datetime.today(),
   abstract: text(size: 10pt, [
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sodales commodo
-    neque consectetur interdum. In nisi enim, consequat quis mauris sit amet,
-    porta auctor augue. Cras accumsan id libero id pulvinar. Pellentesque semper,
-    elit a pretium sollicitudin, elit quam pulvinar velit, quis ultrices nisl
-    felis nec nisi. Nam placerat dolor elit, tincidunt condimentum justo consequat
-    sed.
-
-    Etiam sed porttitor nulla. Aliquam condimentum lacinia dapibus. Sed rutrum
-    pulvinar lectus ac fringilla. Cras nibh nibh, tristique at arcu commodo,
-    semper facilisis urna. Sed euismod pellentesque mauris, a vehicula urna
-    pellentesque id. Nam tellus felis, ultricies eget nibh in, euismod suscipit
-    lacus. Pellentesque scelerisque, augue ac auctor viverra, orci purus viverra
-    odio, vitae iaculis est leo ac ante. Vivamus commodo tellus ut nisi vulputate,
-    eget cursus diam fringilla. Fusce tempor velit eget libero maximus feugiat.
+    This document aims to take you from knowing about Bulletproofs to learning
+    about Lasso, the primary construction used in Jolt.
   ]),
   date-format: "[year repr:full]-[month padding:zero]-[day padding:zero]",
-  bibliography: bibliography("refs.bib"),
-  figure-index: (enabled: true),
+  bibliography: bibliography("refs.bib", style: "./refs-style-2.csl"),
+  figure-index: (enabled: false),
   table-index: (enabled: true),
   listing-index: (enabled: true),
 )
@@ -75,6 +63,19 @@
 #let Fb = math.bb("F")
 #let inrand = $attach(in, br: R)$
 #let vec(body) = $bold(body)$
+
+= Introduction
+
+This document generally assumes that you're familiar with Bulletproofs,
+specifically the Inner Product Arguments used. It also assumes basic
+familiarity with Interactive Arguments and Pedersen commitments. These concepts
+are well presented, somewhat less formal than the relevant original papers,
+but in an understandable manner in Adam Gibson's excellent write-up "From Zero
+(Knowledge) to Bulletproofs"@from0k2bp.
+
+= Prerequisites
+
+== Multilinear Extensions
 
 = Sumcheck
 
@@ -124,31 +125,31 @@ $ H := sum_(b_1 in bits) sum_(b_2 in bits) dots sum_(b_v in bits) g(b_1, dots, b
     node(A, )
     node(B, $ deg(g_j) meq deg_(j)(g) $)
 
-    let (A, B) = ((0, 7*w), (3, 7*w))
+    let (A, B) = ((0, 8*w), (3, 8*w))
     node(A, "")
     node(B, $ r_j inrand Fb $)
     edge(B, A, "->", $r_j$)
 
     // -------------------- Round v -------------------- //
-    let (A, B, C) = ((0, 8*w), (1.5, 8*w), (3, 8*w))
+    let (A, B, C) = ((0, 9*w), (1.5, 9*w), (3, 9*w))
     node(B, text(size: 12pt, weight: "black", "Round v"))
     edge(A, B, "=")
     edge(B, C, "=")
 
-    let (A, B) = ((0, 9*w), (3, 9*w))
+    let (A, B) = ((0, 10*w), (3, 10*w))
     node(A, move(dy: .35em, $ g_(v)(X) := g(r_(1:v-1), X)$))
     node(B, $ g_(v-1)(r_(j-1)) meq g_(v)(0) + g_(v)(1)$)
     edge(A, B, "->", $g_(v)(X)$)
 
-    let (A, B) = ((0, 10*w), (3, 10*w))
+    let (A, B) = ((0, 11*w), (3, 11*w))
     node(A, )
     node(B, $ deg(g_v) meq deg_(v)(g) $)
 
-    let (A, B) = ((0, 11*w), (3, 11*w))
+    let (A, B) = ((0, 12*w), (3, 12*w))
     node(A, "")
     node(B, $ r_v inrand Fb $)
 
-    let (A, B) = ((0, 12*w), (3, 12*w))
+    let (A, B) = ((0, 13*w), (3, 13*w))
     node(A, "")
     node(B, $ g_(v)(r_v) meq g(r_(1:v)) $)
   })
@@ -170,6 +171,7 @@ in bits^m$. To do this, we can leverage the sumcheck protocol, defined earlier.
     #diagram(
       node-stroke: 1pt,
       {
+        let O = (3*w, -1.5*h)
         let N00 = (3*w, 0*h)
         let (N10, N11) = ((1*w, 1*h), (5*w, 1*h))
         let (N20, N21, N22, N23) = (
@@ -187,10 +189,12 @@ in bits^m$. To do this, we can leverage the sumcheck protocol, defined earlier.
 
         // Really hacky centering lol
         node((8.25*w, 0*h), "", stroke: none)
+        node((-1.2*w, -1.5*h), "Outputs")
         node((-1.2*w, 0*h), "Layer 0")
         node((-1.2*w, 1*h), "Layer 1")
         node((-1.2*w, 2*h), "Layer 2")
         node((-1.2*w, 3.5*h), "Inputs")
+        node(O, [$o_1$], shape: rect)
         node(N00, [$times_(0)$], radius: 1.2em)
         node(N10, [$times_(0)$], radius: 1.2em)
         node(N11, [$times_(1)$], radius: 1.2em)
@@ -198,10 +202,10 @@ in bits^m$. To do this, we can leverage the sumcheck protocol, defined earlier.
         node(N21, [$times_(01)$], radius: 1.2em)
         node(N22, [$times_(10)$], radius: 1.2em)
         node(N23, [$times_(11)$], radius: 1.2em)
-        node(N30, [$v_1$], radius: 1.2em)
-        node(N31, [$v_2$], radius: 1.2em)
-        node(N32, [$v_3$], radius: 1.2em)
-        node(N33, [$v_4$], radius: 1.2em)
+        node(N30, [$w_1$], shape: rect)
+        node(N31, [$w_2$], shape: rect)
+        node(N32, [$w_3$], shape: rect)
+        node(N33, [$w_4$], shape: rect)
         edge(N10, N00, "-|>")
         edge(N11, N00, "-|>")
         edge(N20, N10, "-|>")
@@ -212,6 +216,7 @@ in bits^m$. To do this, we can leverage the sumcheck protocol, defined earlier.
         edge(N31, N21, "-->")
         edge(N32, N22, "-->")
         edge(N33, N23, "-->")
+        edge(N00, O, "-->")
       }
     )
   ],
@@ -254,14 +259,54 @@ start with the following three functions:
   )
 ]
 
-We can use the multilinear extensions of $"add"_i$ and $"mul"_i$ to represent $W_(i)$ in a form
-that lets us use sumcheck:
+We can use the multilinear extensions of $"add"_i$ and $"mul"_i$ to represent
+$W_(i)$ in a form that lets us use sumcheck:
 
 $ tilde(W)_(i)(a) = sum_(b,c in bits^(k_(i+1))) tilde("add")_(i)(a,b,c)(tilde(W)_(i+1)(b) + tilde(W)_(i+1)(c)) + tilde("mult")_(i)(a,b,c) dot tilde(W)_(i+1)(b) dot tilde(W)_(i+1)(c) $
 
 #todo-box[
   What is the degree of each $W_(i)$? Is it important?
 ]
+
+Assume that the prover convinces the verifier that some polynomial $D(X_1,
+dots, X_ell) = tilde(W)_0$, meaning that the above holds recursively all
+the way to layer $d$. Then the verifier can confirm that the evaluations of
+the circuit given input $vec(w)$ evaluates to $vec(o)$ by simply evaluating
+$D((X_1, dots, X_ell))$ on all gate labels in depth zero. To prove this,
+the verifier chooses a random point $r_0$ and wishes to verify that $D(r_0)
+= W_0(r_0)$, which by Schwarz-Zippel means that $D(X_1, dots, X_ell) =
+W_0(X_1, dots, X_ell)$. Therefore, the prover and verifier apply sumcheck
+to the following polynomial:
+
+$ tilde(f)^((0))_(r_0)(b_0, c_0) = tilde("add")_(0)(r_0,b_0,c_0)(tilde(W)_1(b_0) + tilde(W)_1(c_0)) + tilde("mult")_(0)(r_0,b_0,c_0) dot tilde(W)_1(b_0) dot tilde(W)_1(c_0) $
+
+Which, if this succeeds, the verifier will be convinced that $D(X_1, dots,
+X_ell) = W_0(X_1, dots, X_ell)$ as desired. But in the final round of the sumcheck
+protocol, the verifier must be able to evaluate the above polynomial at a
+random point. The functions $tilde("add")$ and $tilde("mul")$ are part of
+the circuit description, and can thus be computed by the verifier without
+help from the prover. But the verifier also needs to evaluate $tilde(W_1)$
+at two random points $b', c' inrand Fb$ corresponding to $b_0, c_0$. In principle,
+we could run the sumcheck protocol twice then, on the polynomials:
+
+$
+  tilde(f)^((1))_(b')(b_1, c_1) &= tilde("add")_(0)(b',b_1,c_1)(tilde(W)_1(b_1) + tilde(W)_1(c_1)) + tilde("mult")_(0)(b',b_0,c_1) dot tilde(W)_1(b_0) dot tilde(W)_1(c_1) \
+  tilde(f)^((1))_(c')(b_1, c_1) &= tilde("add")_(0)(c',b_1,c_1)(tilde(W)_1(b_1) + tilde(W)_1(c_1)) + tilde("mult")_(0)(c',b_0,c_0) dot tilde(W)_1(b_0) dot tilde(W)_1(c_0)
+$
+
+But this would result in an exponential amount of sumchecks in the depth
+$d$. Instead we can reduce two checks into one using a linear combination. For
+any polynomial $p(X)$:
+
+bread text
+bread text
+
+$ tilde(f)^((i))_(r_i)(b, c) = sum_(b,c in bits^(k_(i+1))) tilde("add")_(i)(r_i,b,c)(tilde(W)_(i+1)(b) + tilde(W)_(i+1)(c)) + tilde("mult")_(i)(r_i,b,c) dot tilde(W)_(i+1)(b) dot tilde(W)_(i+1)(c) $
+
+After which point, the verifier will be convinced that $tilde(f)^((i))_(r_i)(b,
+c)$ accurately represents the gate values from layer $i$.
+
+If the prover and verifier run sumcheck on the above equation, the verifier will then be convinced that $$
 
 = Other
 
@@ -300,50 +345,6 @@ How do we get $S_(i+1)^2$ terms in the first lemma and $S'_(i+1) dot S_(i+1)$ in
 - $S_i = 2^(k_i)$
 - $S'_i = 2^(k'_i) = 2^(b + k_i)$
 
-#align(center)[
-  #set math.equation(numbering: none)
-  #set text(10pt)
-  #let w = 0.8
-  #let h = 0.8
-  #diagram(
-    node-stroke: 1pt,
-    {
-      let N00 = (3*w, 0*h)
-      let (N10, N11) = ((1*w, 1*h), (5*w, 1*h))
-      let (N20, N21, N22, N23) = (
-        (0*w, 2*h),
-        (2*w, 2*h),
-        (4*w, 2*h),
-        (6*w, 2*h),
-      )
-      let (N30, N31, N32, N33) = (
-        (0*w, 3.5*h),
-        (2*w, 3.5*h),
-        (4*w, 3.5*h),
-        (6*w, 3.5*h),
-      )
-
-      node(N00, [$times_(00)$], radius: 1.2em)
-      node(N10, [$times_(10)$], radius: 1.2em)
-      node(N11, [$times_(11)$], radius: 1.2em)
-      node(N20, [$times_(20)$], radius: 1.2em)
-      node(N21, [$times_(21)$], radius: 1.2em)
-      node(N22, [$times_(22)$], radius: 1.2em)
-      node(N23, [$times_(23)$], radius: 1.2em)
-      node(N30, [$a_1$], radius: 1.2em)
-      node(N31, [$a_2$], radius: 1.2em)
-      node(N32, [$a_3$], radius: 1.2em)
-      node(N33, [$a_4$], radius: 1.2em)
-      edge(N10, N00, "-|>")
-      edge(N11, N00, "-|>")
-      edge(N20, N10, "-|>")
-      edge(N21, N10, "-|>")
-      edge(N22, N11, "-|>")
-      edge(N23, N11, "-|>")
-      edge(N30, N20, "-|>")
-      edge(N31, N21, "-|>")
-      edge(N32, N22, "-|>")
-      edge(N33, N23, "-|>")
-    }
-  )
+#todo-box[
+  Drop this line of thought and use a generally linear prover instead (2019)
 ]

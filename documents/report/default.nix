@@ -19,6 +19,23 @@
       pkgs.roboto
     ];
   };
+  # harper = pkgs.rustPlatform.buildRustPackage rec {
+  #   pname = "harper-test-program";
+  #   version = "0.34.1";
+
+  #   src = pkgs.fetchFromGitHub {
+  #     owner = "Automattic";
+  #     repo = "harper";
+  #     rev = "v${version}";
+  #     hash = "sha256-fBAPJhB+x8cIFs6rp1nDvrtVkAKx2wuFCO7FwHOwLRM=";
+  #   };
+
+  #   cargoHash = "sha256-XVC2xgUwazYXVp5sx6kA+aopd9m38XlbgsLnb0D92kg=";
+
+  #   meta = {
+  #     mainProgram = "harper-cli";
+  #   };
+  # };
 in {
   packages.default = report; 
 
@@ -28,6 +45,7 @@ in {
       pkgs.tinymist
       pkgs.typstyle
       pkgs.harper
+      # harper
     ];
   };
 }

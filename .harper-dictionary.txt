@@ -1,6 +1,8 @@
 GKR
 Jakobsen
+Pedersen
 Rasmus
 multilinear
 prover
 sumcheck
+sumchecks
