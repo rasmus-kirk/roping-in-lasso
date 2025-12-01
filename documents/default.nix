@@ -6,7 +6,7 @@
   let
     report = pkgs.buildTypstDocument {
       name = "report";
-      src = ./.;
+      src = ./report;
       typstEnv = p: with p; [
         gruvy_2_1_0
         zebraw_0_6_0
@@ -16,9 +16,13 @@
         oxifmt_0_2_1 # Nixpkgs support for typst is sort of janky
       ];
       creationTimestamp = self.lastModified;
-      fonts = [
-        pkgs.roboto
-      ];
+      fonts = [ pkgs.roboto ];
+    };
+    contract = pkgs.buildTypstDocument {
+      name = "contract";
+      src = ./contract;
+      creationTimestamp = self.lastModified;
+      fonts = [ pkgs.roboto ];
     };
   # harper = pkgs.rustPlatform.buildRustPackage rec {
   #   pname = "harper-test-program";
@@ -38,7 +42,8 @@
   #   };
   # };
 in {
-  packages.default = report; 
+  packages.report= report; 
+  packages.contract = contract; 
 
   devShells.default = pkgs.mkShellNoCC {
     inputsFrom = [ report ];

@@ -14,7 +14,7 @@
 
   outputs = { self, nixpkgs, website-builder, press, ...}:
     let
-      reportF = pkgs: pkgs.callPackage ./documents/report { self = self; };
+      documentsF = pkgs: pkgs.callPackage ./documents { self = self; };
       rustF = pkgs: pkgs.callPackage ./code { self = self; };
       websiteF = pkgs: website-builder.lib {
         pkgs = pkgs;
@@ -24,7 +24,11 @@
         includedDirs = [
           (pkgs.runCommand "report" {} ''
             mkdir -p $out
-            cp -a ${(reportF pkgs).packages.default} $out/report.pdf
+            cp -a ${(documentsF pkgs).packages.report} $out/report.pdf
+          '')
+          (pkgs.runCommand "contract" {} ''
+            mkdir -p $out
+            cp -a ${(documentsF pkgs).packages.contract} $out/contract.pdf
           '')
         ];
         standalonePages = [{
@@ -40,6 +44,10 @@
           {
             title = "Report";
             location = "/report/report.pdf";
+          }
+          {
+            title = "Report";
+            location = "/contract/contract.pdf";
           }
           {
             title = "Github";
@@ -60,13 +68,13 @@
 
       devShells = forAllSystems ({ pkgs } : {
         rust = (rustF pkgs).devShells.default;
-        report = (reportF pkgs).devShells.default;
+        report = (documentsF pkgs).devShells.default;
       });
 
       packages = forAllSystems ({ pkgs }: rec {
         website = (websiteF pkgs).package;
         rust = (rustF pkgs).packages;
-        report = (reportF pkgs).packages.default;
+        report = (documentsF pkgs).packages.report;
         default = website;
       });
     };
