@@ -22,12 +22,17 @@
 )
 #show ref: set text(fill: theme.fg1)
 #show: ilm.with(
-  title: [Bulletproofs to Lasso],
+  title: [Roping in Lasso],
   author: "Rasmus Kirk Jakobsen",
   date: datetime.today(),
   abstract: text(size: 10pt, [
-    This document aims to take you from knowing about Bulletproofs to learning
-    about Lasso, the primary construction used in Jolt.
+    An accessible guide to Lasso, which enables lookup arguments from much
+    larger tables than previously possible. Lasso is the primary component
+    of Jolt, the SNARK‑based virtual machine (zkVM) that proves correct
+    execution for RISC-V programs via large table lookups, drastically reducing
+    complexity and prover costs compared to earlier zkVMs. The document
+    assumes minimal familiarity with the constructions that Lasso builds
+    on, by introcing them within a single reference.
   ]),
   date-format: "[year repr:full]-[month padding:zero]-[day padding:zero]",
   bibliography: bibliography("refs.bib", style: "./refs-style-2.csl"),
@@ -59,6 +64,8 @@
 #let prover = math.cal("P")
 #let verifier = math.cal("V")
 #let circuit = math.cal("C")
+#let Oc = math.cal("O")
+#let Xc = math.cal("X")
 #let bits = math.bb("B")
 #let Fb = math.bb("F")
 #let inrand = $attach(in, br: R)$
@@ -77,7 +84,7 @@ but in an understandable manner in Adam Gibson's excellent write-up "From Zero
 
 == Multilinear Extensions
 
-= Sumcheck
+== Sumcheck
 
 $ H := sum_(b_1 in bits) sum_(b_2 in bits) dots sum_(b_v in bits) g(b_1, dots, b_v) $
 
@@ -252,10 +259,10 @@ start with the following three functions:
     numbering: none,
     $
       mat(delim: #none, column-gap: #3em, align: #left,
-        "mul"_0(0 || 0 || 0) = 1,                      "mul"_1(0 || 00 || 01) = 1;
-        "mul"_0(0 || 0 || 1) = 1,                      "mul"_1(1 || 10 || 11) = 1;
-        "mul"_0(wildcard || wildcard || wildcard) = 0, "mul"_1(wildcard || wildcard || wildcard) = 0;
-        "add"_0(wildcard || wildcard || wildcard) = 0, "add"_0(wildcard || wildcard || wildcard) = 0;
+        "mul"_0(0 || 0 || 0) = 1, "mul"_1(0 || 00 || 01) = 1;
+        "mul"_0(0 || 0 || 1) = 1, "mul"_1(1 || 10 || 11) = 1;
+        "mul"_0(wildcard) = 0,    "mul"_1(wildcard) = 0;
+        "add"_0(wildcard) = 0,    "add"_1(wildcard) = 0;
       )
     $
   )
@@ -267,56 +274,60 @@ $W_(i)$ in a form that lets us use sumcheck:
 $ tilde(W)_(i)(a) = sum_(b,c in bits^(k_(i+1))) tilde("add")_(i)(a,b,c)(tilde(W)_(i+1)(b) + tilde(W)_(i+1)(c)) + tilde("mult")_(i)(a,b,c) dot tilde(W)_(i+1)(b) dot tilde(W)_(i+1)(c) $
 
 Assume that the prover convinces the verifier that some polynomial $D(X_1,
-dots, X_ell) = tilde(W)_0$, meaning that the above holds recursively all
-the way to layer $d$. Then the verifier can confirm that the evaluations of
-the circuit given input $vec(w)$ evaluates to $vec(o)$ by simply evaluating
-$D((X_1, dots, X_ell))$ on all gate labels in depth zero. To prove this,
-the verifier chooses a random point $r_0$ and wishes to verify that $D(r_0)
-= W_0(r_0)$, which by Schwarz-Zippel means that $D(X_1, dots, X_ell) =
-W_0(X_1, dots, X_ell)$. Therefore, the prover and verifier apply sumcheck
-to the following polynomial:
+dots, X_(k_0)) = tilde(W)_0(X_1, dots, X_(k_0))$, meaning that the above
+holds recursively all the way to layer $d$. Then the verifier can confirm
+that the evaluations of the circuit given input $vec(w)$ evaluates to $vec(o)$
+by simply evaluating $D(X_1, dots, X_(k_0))$ on all gate labels in the output
+layer. To prove this, the verifier chooses a random point $r$ and wishes to
+verify that $D(r) = W_0(r)$, which by Schwarz-Zippel means that $D(X_1,
+dots, X_(k_0)) = W_0(X_1, dots, X_(k_0))$. Therefore, the prover and verifier
+apply sumcheck to the following polynomial:
 
-$ tilde(f)^((0))_(r_0)(b_0, c_0) = tilde("add")_(0)(r_0,b_0,c_0)(tilde(W)_1(b_0) + tilde(W)_1(c_0)) + tilde("mult")_(0)(r_0,b_0,c_0) dot tilde(W)_1(b_0) dot tilde(W)_1(c_0) $
+$ tilde(f)^((0))_(r)(b, c) = tilde("add")_(0)(r,b,c)(tilde(W)_1(b) + tilde(W)_1(c)) + tilde("mult")_(0)(r,b,c) dot tilde(W)_1(b) dot tilde(W)_1(c) $
 
-Which, if this succeeds, the verifier will be convinced that $D(X_1, dots,
-X_ell) = W_0(X_1, dots, X_ell)$ as desired. But in the final round of the sumcheck
-protocol, the verifier must be able to evaluate the above polynomial at a
-random point. The functions $tilde("add")_0$ and $tilde("mul")_0$ are part of
-the circuit description, and can thus be computed by the verifier without
-help from the prover. But the verifier also needs to evaluate $tilde(W_1)$
-at two random points $b', c' inrand Fb$ corresponding to $b_0, c_0$. In principle,
-we could run the sumcheck protocol twice then, on the polynomials:
+Which, if succesful, convinces the verifier that $D(X_1, dots, X_(k_0)) =
+W_0(X_1, dots, X_(k_0))$ as desired. But in the final round of the sumcheck
+protocol, the verifier must be able to evaluate the above polynomial
+at a random point. The functions $tilde("add")_0$ and $tilde("mul")_0$
+are part of the circuit description, and can thus be computed by the
+verifier without help from the prover #footnote[Luckily this can be done
+by the verifier in $Oc(lg(k_0))$ time, which is important for achieving an
+efficient verifier.] But the verifier also needs to evaluate $tilde(W_1)$
+at two separate $k_i$ random points $b'_1, c'_1 inrand Fb^(k_1)$ corresponding
+to $b, c$. In principle, we could run the sumcheck protocol twice,
+on the polynomials:
 
 $
-  tilde(f)^((1))_(b')(b_1, c_1) &= tilde("add")_(1)(b',b_1,c_1)(tilde(W)_2(b_1) + tilde(W)_2(c_1)) + tilde("mult")_(1)(b',b_1,c_1) dot tilde(W)_2(b_1) dot tilde(W)_2(c_1) \
-  tilde(f)^((1))_(c')(b_1, c_1) &= tilde("add")_(1)(c',b_1,c_1)(tilde(W)_2(b_1) + tilde(W)_2(c_1)) + tilde("mult")_(1)(c',b_1,c_1) dot tilde(W)_2(b_1) dot tilde(W)_2(c_1)
+  tilde(f)^((1))_(b'_1)(b, c) &= tilde("add")_(1)(b'_1,b,c)(tilde(W)_2(b) + tilde(W)_2(c)) + tilde("mult")_(1)(b'_1,b,c) dot tilde(W)_2(b) dot tilde(W)_2(c) \
+  tilde(f)^((1))_(c'_1)(b, c) &= tilde("add")_(1)(c'_1,b,c)(tilde(W)_2(b) + tilde(W)_2(c)) + tilde("mult")_(1)(c'_1,b,c) dot tilde(W)_2(b) dot tilde(W)_2(c)
 $ <eq:two-fs>
 
-But this would result in an exponential amount of sumchecks in the depth
-$d$. Instead, we can reduce two checks into one, using a linear combination.
+But this would result in an exponential amount of sumchecks in the depth $d$,
+which would be quite a problem! Instead, we can reduce two checks into one,
+using a linear combination.
 
 == Combining two claims to one
 
 Suppose we were to apply sumcheck to the following polynomial instead:
 
 $
-  tilde(q)_(1)(b', c') = tilde(W)_(1)(b') + alpha dot tilde(W)_(1)(c')
+  tilde(q)(alpha) := tilde(W)_(1)(b'_1) + alpha dot tilde(W)_(1)(c'_1)
 $
 
 Which can be derived as:
 
 $
-  tilde(q)_1(b', c') &= &&(sum_(b,c in bits^(k_(1))) tilde("add")_(0)(b',b,c)(tilde(W)_(1)(b) + tilde(W)_(1)(c)) + tilde("mul")_(0)(b',b,c) dot tilde(W)_(1)(b) dot tilde(W)_(1)(c)) + \
-                     &  &&alpha dot (sum_(b,c in bits^(k_(1))) tilde("add")_(0)(c',b,c)(tilde(W)_(1)(b) + tilde(W)_(1)(c)) + tilde("mul")_(0)(c',b,c) dot tilde(W)_(1)(b) dot tilde(W)_(1)(c)) \
-                     &= &&sum_(b,c in bits^(k_(1))) tilde("add")_(0)(b',b,c)(tilde(W)_(1)(b) + tilde(W)_(1)(c)) + tilde("mul")_(0)(b',b,c) dot tilde(W)_(1)(b) dot tilde(W)_(1)(c) + \
-                     &  &&alpha dot tilde("add")_(0)(c',b,c)(tilde(W)_(1)(b) + tilde(W)_(1)(c)) + alpha dot tilde("mul")_(0)(c',b,c) dot tilde(W)_(1)(b) dot tilde(W)_(1)(c) \
-                     &= &&sum_(b,c in bits^(k_(1))) (tilde("add")_(0)(b',b,c) + alpha dot tilde("add")_(0)(c',b,c))(tilde(W)_(1)(b) + tilde(W)_(1)(c)) \
-                     &  &&(tilde("mul")_(0)(b',b,c) + alpha dot tilde("mul")_(0)(c',b,c))(tilde(W)_(1)(b) dot tilde(W)_(1)(c))
+  tilde(q)(alpha) &= &&(sum_(b,c in bits^(k_(2))) tilde("add")_(1)(b'_1,b,c)(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + tilde("mul")_(1)(b'_1,b,c) dot tilde(W)_(2)(b) dot tilde(W)_(2)(c)) + \
+                  &  &&alpha dot (sum_(b,c in bits^(k_(2))) tilde("add")_(1)(c'_1,b,c)(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + tilde("mul")_(1)(c'_1,b,c) dot tilde(W)_(2)(b) dot tilde(W)_(2)(c)) \
+                  &= &&sum_(b,c in bits^(k_(2))) tilde("add")_(1)(b'_1,b,c)(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + tilde("mul")_(1)(b'_1,b,c) dot tilde(W)_(2)(b) dot tilde(W)_(2)(c) + \
+                  &  &&alpha dot tilde("add")_(1)(c'_1,b,c)(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + alpha dot tilde("mul")_(1)(c'_1,b,c) dot tilde(W)_(2)(b) dot tilde(W)_(2)(c) \
+                  &= &&sum_(b,c in bits^(k_(2))) (tilde("add")_(1)(b'_1,b,c) + alpha dot tilde("add")_(1)(c'_1,b,c))(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + \
+                  &  &&(tilde("mul")_(1)(b'_1,b,c) + alpha dot tilde("mul")_(1)(c'_1,b,c))(tilde(W)_(2)(b) dot tilde(W)_(2)(c))
 $ <eq:combined-poly>
 
 The below Lemma shows how this will help the prover-verifier pair in showing
-that $v_(b') = tilde(W)_1(b') and v_(b') = tilde(W)_1(c')$, thus enabling
-the verifier to compute $tilde(f)_(r_0)^((0))(b_0, c_0)$:
+that $v_(b'_1) = tilde(W)_1(b'_1) and v_(b'_1) = tilde(W)_1(c'_1)$, thus
+enabling the verifier to compute $tilde(f)_(r)^((0))(b'_1, c'_1)$:
 
 #lemma[
   #set math.equation(numbering: none)
@@ -349,17 +360,25 @@ the verifier to compute $tilde(f)_(r_0)^((0))(b_0, c_0)$:
 ] <lem:multiple-evals-same-poly>
 
 In the GKR protocol, running sumcheck on @eq:combined-poly convinces
-the verifier that $tilde(Q)_(i)(b', c') = tilde(W)_(i)(b') + alpha dot
-tilde(W)_(i)(c')$, which means that the verifier knows that $tilde(Q)_(i)(X)$
-is defined as in <lem:multiple-evals-same-poly> and they know the evaluation of
-$tilde(Q)_(i)(X)$, $tilde(Q)_(i)(b', c')$. The verifier can then verify that
-$v_(b') = tilde(W)_(i)(b')$ and $v_(c') = tilde(W)_(i)(c')$ by additionally
-checking that $tilde(Q)_(i)(b', c') = v_(b') + alpha dot v_(c')$.
+the verifier that $tilde(q)_1(b'_1, c'_1) = tilde(W)_1(b'_1) + alpha dot
+tilde(W)_1(c'_1)$, which means that the verifier knows that $tilde(q)_1(X)$
+is defined as in <lem:multiple-evals-same-poly> and they know the evaluation
+of $tilde(q)_1(X)$ at $b'_1, c'_1$. The verifier can then verify that $v_(b'_1)
+= tilde(W)_1(b'_1)$ and $v_(c'_1) = tilde(W)_1(c'_1)$ by additionally checking
+that $tilde(q)_1(b'_1, c'_1) = v_(b'_1) + alpha dot v_(c'_1)$.
 
-With $v_(b')$ and $v_(c')$ the verifier can compute the evaluation of
-$tilde(f)_(r_0)^((0))(b', c')$:
+With $v_(b'_1)$ and $v_(c'_1)$ the verifier can compute the evaluation of
+$tilde(f)_(r)^((0))(b'_1, c'_1)$:
 
-$ tilde(f)^((0))_(r_0)(b', c') = tilde("add")_(0)(r_0,b',c')(v_(b') + v_(c')) + tilde("mult")_(0)(r_0,b',c') dot v_(b') dot v_(c') $
+$ tilde(f)^((0))_(r)(b', c') = tilde("add")_(0)(r,b'_1,c'_1)(v_(b'_1) + v_(c'_1)) + tilde("mult")_(0)(r,b'_1,c'_1) dot v_(b'_1) dot v_(c'_1) $
+
+Thus, when we proceed from the first layer, the polynomial we do sumcheck
+on would be:
+
+$
+  tilde(f)^((1))_((b'_1, c'_1))(b, c) &:= &&(tilde("add")_(1)(b'_1,b,c) + alpha dot tilde("add")_(1)(c'_1,b,c))(tilde(W)_(2)(b) + tilde(W)_(2)(c)) + \
+                                      &   &&(tilde("mul")_(1)(b'_1,b,c) + alpha dot tilde("mul")_(1)(c'_1,b,c))(tilde(W)_(2)(b) dot tilde(W)_(2)(c))
+$
 
 It should already now be apparent that we can repeat this procedure, all
 the way to the input layer $d$.
@@ -367,21 +386,289 @@ the way to the input layer $d$.
 == Completing the protocol
 
 In the input layer, the final check in the sumcheck protocol requires the
-verifier to evaluate the polynomial:
+verifier to evaluate the following polynomial at $b'_d, c'_d$:
 
-$ tilde(f)^((d-1))_(r_(d-1))(b', c') = tilde("add")_(d-1)(r_(d-1),b',c')(tilde(W)_(d)(b') + tilde(W)_(d)(c')) + tilde("mult")_(d-1)(r_(d-1),b',c') dot tilde(W)_(d)(b') dot tilde(W)_(d)(c') $
+$
+  tilde(f)^((d-1))_((b'_(d-1), c'_(d-1)))(b, c) &:= &&(tilde("add")_(d-1)(b'_(d-1),b,c) + alpha dot tilde("add")_(d-1)(c'_(d-1),b,c))(tilde(W)_(d)(b) + tilde(W)_(d)(c)) + \
+                                                &   &&(tilde("mul")_(d-1)(b'_(d-1),b,c) + alpha dot tilde("mul")_(d-1)(c'_(d-1),b,c))(tilde(W)_(d)(b) dot tilde(W)_(d)(c))
+$
 
-The polynomials $tilde("add")_(d-1)$ and $tilde("mul")_(d-1)$ can be
-evaluated as usual. The polynomial $tilde(W)_(d)(b')$ corresponds to the
+The polynomials $tilde("add")_(d-1)$ and $tilde("mul")_(d-1)$ can be evaluated
+as usual. The polynomial $tilde(W)_(d)(X, dots, X_(k_d))$ corresponds to the
 values of the input layer $vec(w)$. Since the verifier knows $vec(w)$ they
-can compute the multilinear extension of $vec(w)$ corresponding to $W_d(X,
-..., X_(k_d))$. From this the verifier can compute $tilde(W)_(d)(b'),
-tilde(W)_(d)(c')$ and thus the evaluation of $tilde(f)^((d-1))_(r_(d-1))(b',
-c')$.
+can compute the multilinear extension of $vec(w)$ corresponding to $W_(d)(X,
+..., X_(k_d))$. From this the verifier can compute $tilde(W)_(d)(b'_d),
+tilde(W)_(d)(c'_d)$ and thus the evaluation of $tilde(f)^((d-1))_((b'_(d-1),
+c'_(d-1)))(b, c)$.
 
 The entire protocol can be seen below:
 
+#let zero-width-box(body) = context {
+  let width = 35em
+  let (height,) = measure(width: width, body)
+  place(center + horizon, box(width: width, height: height, body))
+  box(width: 0%, height: 2 * height)
+}
+
+#align(center)[
+  #set math.equation(numbering: none)
+  #set text(10pt)
+  #let w = 0.7
+  #let h = 0.7
+
+  #diagram(debug: 0, {
+    let (P, M, V) = ((0, 0), (1.5, 0), (3, 0))
+
+    node(M,
+      zero-width-box(text(theme.fg2)[$#text(size: 12pt, $
+        hat(x) &:= ("add"_0, ..., "add"_d, "mul"_0, ..., "mul"_d)
+      $)$])
+    )
+
+    P.at(1) += h/3; M.at(1) += h/3; V.at(1) += h/3;
+
+    node(P, $#text(size: 12pt, $bold("Prover")(hat(x), vec(w))$)$)
+    node(V, $#text(size: 12pt, $bold("Verifier")(hat(x), vec(w))$)$)
+    P.at(1) += h/2; M.at(1) += h/2; V.at(1) += h/2; 
+
+    // -------------------- Preprocessing -------------------- //
+    node(M, $#text(size: 12pt, weight: "black", $"Preprocessing"$)$)
+    edge(P, M, "=")
+    edge(M, V, "=")
+    P.at(1) += h/1.5; M.at(1) += h/1.5; V.at(1) += h/1.5; 
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      $prover$ sends $W'$ to $verifier$ claiming that $W' = W_0$. $verifier$
+      then picks out a random $r$. After this point, $prover$ wants to
+      prove that $m_0 = tilde(W)_0(r)$.
+    ]))
+    P.at(1) += h/1.5; M.at(1) += h/1.5; V.at(1) += h/1.5;
+
+    node(P, $W': bits^(k_0) -> Fb$)
+    node(V, $ r inrand Fb, m_0 := tilde(W)'(r) $)
+    edge(P, V, "->", $ W' $)
+    P.at(1) += h/2; M.at(1) += h/2; V.at(1) += h/2; 
+
+    // -------------------- Round 0 -------------------- //
+    node(M, $#text(size: 12pt, weight: "black", $"Round" 0$)$)
+    edge(P, M, "=")
+    edge(M, V, "=")
+    P.at(1) += h/1.3; M.at(1) += h/1.3; V.at(1) += h/1.3; 
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      $prover$ defines the $(2k_i)$-variate polynomial,
+      $tilde(f)^((0))_(r)(b, c)$, $prover$ and $verifier$ then perform
+      sumcheck on the polynomial:
+      $ tilde(f)^((0))_(r)(b, c) = tilde("add")_(0)(r,b,c)(tilde(W)_1(b) + tilde(W)_1(c)) + tilde("mul")_(0)(r,b,c) tilde(W)_1(b) dot tilde(W)_1(c) $
+    ]))
+    P.at(1) += h; M.at(1) += h; V.at(1) += h;
+
+    // node(P, $ tilde(f)^((0))_(r)(b', c')$)
+    edge(P, V, "<->", $sum_(b, c in bits^(k_1)) tilde(f)^((0))_(r)(b, c) meq m_0$)
+    P.at(1) += h/1.5; M.at(1) += h/1.5; V.at(1) += h/1.5; 
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      At the end of the protocol, $prover$ sends $verifier$ the evaluations
+      of $v_(b'_0) := tilde(W)_1(b'_0)$ and $v_(c'_0) := tilde(W)_1(c'_0)$, so
+      $verifier$ can make the final check in the sumcheck protocol.
+    ]))
+    P.at(1) += h; M.at(1) += h; V.at(1) += h;
+
+    node(P, $v_(b'_0) := tilde(W)_1(b'_0), v_(c'_0) := tilde(W)_1(c'_0)$)
+    node(V, $
+      m_0 meq &tilde("add")_0(r, b'_0, c'_0) dot (v_(b'_0) + v_(c'_0)) + \
+              &tilde("mul")_0(r, b'_0, c'_0) dot v_(b'_0) dot v_(c'_0)
+    $)
+    edge(P, V, "->", $v_(b'_0), v_(c'_0)$)
+    P.at(1) += h/1.5; M.at(1) += h/1.5; V.at(1) += h/1.5; 
+
+    // -------------------- Round i -------------------- //
+    node(M, $#text(size: 12pt, weight: "black", $"Round" i in [1..d]$)$)
+    edge(P, M, "=")
+    edge(M, V, "=")
+    P.at(1) += h/1.3; M.at(1) += h/1.3; V.at(1) += h/1.3; 
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      To verify the values $v_(b'_(i-1)), v_(c'_(i-1))$ from the previous round,
+      $verifier$ picks out a randomly sampled value $alpha$ and sends it
+      to $prover$. $prover$ uses $alpha$ to construct the combined-claim
+      polynomial, for which $prover$ and $verifier$ perform the sumcheck over:
+
+      $
+        tilde(f)^((i))_((b'_i, c'_i))(b, c) := (tilde("add")_(i)(b'_i,b,c) + tilde("add")_(i)(c'_i,b,c))(tilde(W)_(i+1)(b) + tilde(W)_(i+1)(c)) +
+                                               (tilde("mul")_(i)(b'_i,b,c) + tilde("mul")_(i)(c'_i,b,c))(tilde(W)_(i+1)(b) dot tilde(W)_(i+1)(c))
+      $
+    ]))
+    P.at(1) += h; M.at(1) += h; V.at(1) += h; 
+
+    node(P, $tilde(f)^((i))_((b'_i, c'_i))(b, c)$)
+    node(V, $ alpha inrand Fb $)
+    edge(V, P, "->", $alpha$)
+    P.at(1) += h/2; M.at(1) += h/2; V.at(1) += h/2; 
+
+    edge(P, V, "<->", $sum_(b, c in bits^(k_(i+1))) tilde(f)^((i))_((b'_i, c'_i))(b, c) meq m_i$)
+    P.at(1) += h/1.3; M.at(1) += h/1.3; V.at(1) += h/1.3;
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      At the end of the protocol, $prover$ sends $verifier$ the evaluations of
+      $v_(b'_i) := tilde(W)_(i)(b'_i)$ and $v_(c'_i) := tilde(W)_(i)(c'_i)$,
+      so $verifier$ can make the final check in the sumcheck protocol:
+
+      $
+        m'_i &:= &&(tilde("add")_(i)(b'_i,b'_(i+1),c'_(i+1)) + tilde("add")_(i)(c'_i,b'_(i+1),c'_(i+1)))(tilde(W)_(i+1)(b'_(i+1)) + tilde(W)_(i+1)(c'_(i+1))) + \
+             &   &&(tilde("mul")_(i)(b'_i,b'_(i+1),c'_(i+1)) + tilde("mul")_(i)(c'_i,b'_(i+1),c'_(i+1)))(tilde(W)_(i+1)(b'_(i+1)) dot tilde(W)_(i+1)(c'_(i+1)))
+      $
+      
+    ]))
+    P.at(1) += h; M.at(1) += h; V.at(1) += h;
+
+    node(P, $v_(b'_i) := tilde(W)_(i)(b'_i), v_(c'_i) := tilde(W)_(i)(c'_i)$)
+    node(V, $m_i meq m_i'$)
+    edge(P, V, "->", $v_(b'_i), v_(c'_i)$)
+    P.at(1) += h/2.4; M.at(1) += h/2.4; V.at(1) += h/2.4; 
+
+    // -------------------- Round d -------------------- //
+    node(M, $#text(size: 12pt, weight: "black", $"Round" d$)$)
+    edge(P, M, "=")
+    edge(M, V, "=")
+    P.at(1) += h/1.6; M.at(1) += h/1.6; V.at(1) += h/1.6;
+
+    node(M, inset: 0em, zero-width-box(text(theme.fg2)[
+      At the input layer $d$, $verifier$ has two claims $v_(b')$ and
+      $v_(c')$. $verifier$ constructs $tilde(W)_d$ from $vec(w)$. $verifier$
+      then finally checks that $tilde(W)_(d)(b') meq v_(b')$ and $tilde(W)_(d)(c')
+      meq v_(c')$.
+    ]))
+    P.at(1) += h/2; M.at(1) += h/2; V.at(1) += h/2; 
+    
+    node(V, $ tilde(W)_d(b') meq v_(b') and tilde(W)_d(c') meq v_(c') $)
+    P.at(1) += h; M.at(1) += h; V.at(1) += h; 
+  })
+]
+
 == Efficiency
+
+= A specialized GKR protocol
+
+If we consider the circuit consisting of a binary tree of multiplication
+gates as in @example_circuit. We can present a simpler expression than that
+of regular GKR:
+
+$ tilde(W)_(i)(a) = sum_(b in bits^(k_(i))) tilde("eq")(a, b) dot tilde(W)_(i+1)(a || 0) dot tilde(W)_(i+1)(a || 1) $
+
+It's obvious to see that this expression is equivalent to the one from
+regular GKR, but only for the binary tree of multiplication gates.
+
+In each round of the sumcheck protocol, the prover needs to evaluate a
+univariate polynomial of the form:
+
+$
+  tilde(q)_(i)(alpha) &= &&tilde(W)_(i)(a'_i || 0) + alpha tilde(W)_(i)(a'_i || 1) \
+  tilde(q)_(i)(alpha) &= &&(sum_(b in bits^(k_(i))) tilde("eq")(a'_i || 0, b) dot tilde(W)_(i)(b || 0) dot tilde(W)_(i+1)(b || 1)) + \
+                      &  && (sum_(b in bits^(k_(i))) alpha dot tilde("eq")(a'_i || 1, b) dot tilde(W)_(i)(b || 0) dot tilde(W)_(i+1)(b || 1)) \
+  tilde(q)_(i)(alpha) &= &&sum_(b in bits^(k_(i))) (tilde("eq")(a'_i || 0, b) + alpha dot tilde("eq")(a'_i || 1, b)) dot tilde(W)_(i+1)(b || 0) dot tilde(W)_(i+1)(b || 1)
+$
+
+So the sum-check polynomial would be:
+
+$
+  tilde(f)_(r)^((0))(b) &= tilde("eq")_(r)(b) dot tilde(W)_(1)(r || 0) dot tilde(W)_(1)(r || 1)
+$
+
+$
+  tilde(f)_(a'_i)^((i))(b) &= (tilde("eq")_((a'_(i) || 0))(b) + alpha dot tilde("eq")_((a'_(i) || 1))(b)) dot tilde(W)_(i+1)(a'_(i) || 0) dot tilde(W)_(i+1)(a'_(i) || 1)
+$
+
+== Efficiency
+
+First note, that the prover, if given the values $tilde("eq")_(r)(b),
+tilde("eq")_0(b), tilde("eq")_1, alpha, tilde(W)_(i+1)(0)$ and
+$tilde(W)_(i+1)(1)$, they could evaluate this in constant time for each
+round of the sum-check. We now present how these values can be computed in
+$Oc(S(n))$ time.
+
+We use a general method from dynamic programming throughout the next couple
+subsections. The general idea is that if you need to compute something ...
+
+=== Computing $"eq"(a, b)$ in linear time
+
+We start by looking at the definition of $"eq"_(r)(b) in bits -> bits$:
+
+$ "eq"_(r)(b) := r b + (1 - r) (1 - b) $
+
+Note that $r$ is fixed to a random value by the verifier. To compute a table
+of all evaluations ($vec("eq")_r in bits^(s_0) -> bits$) of $"eq"_(r)(vec(b))$ it
+would naively take $s_0$ time per evaluation, and there are $2^(s_0)$ total
+possible evaluations for $b_i in bits$, so $Oc(s_0 2^(s_0))$ time to compute
+$vec("eq")$. We use dynamic programming to bring this down to $Oc(2^(s_0))$.
+
+$
+  vec("eq")_(r)^((0))[b] = r b + (1 - r) (1 - b)
+$
+
+If we take the definition of $tilde("eq")(vec(a), vec(b))$ for a fixed $vec(a) =
+vec(v) : |v| = k$, we get:
+
+$
+  tilde("eq")_(vec(v))(vec(b)) = product^(k)_(j=1) (v_j b_j + (1 - v_j) (1 - b_j))
+$
+
+Given any $vec("eq")_(vec(v))[b_1, ..., b_(s_i)]$, we can trivially compute
+$tilde("eq")_((v || 0))$ and $tilde("eq")_((v || 1))$:
+
+$
+  vec("eq")_((vec(v) || 0))[b_1, ..., b_(k+1)] &= vec("eq")_(vec(v))[b_1, ..., b_(k)] dot (1 - b_(k + 1)) \
+  vec("eq")_((vec(v) || 1))[b_1, ..., b_(k+1)] &= vec("eq")_(vec(v))[b_1, ..., b_(k)] dot b_(k + 1) \
+$
+
+
+For round $i$ of the GKR protocol, in round $j$ in the sumcheck invocation,
+let's inspect $"eq"^(i)_((vec(a'_i) || 0))(vec(b))$. Let $vec(a'_i) || 0 = vec(v)$:
+
+$ "eq"^((i))_((vec(a'_i) || 0))(vec(b)) = product^(j)_(k=1) (v_k r_k + (1 - v_k) + (1 - r_k)) + product^(s_i)_(k=j+1) (v_k b_k + (1 - v_k) + (1 - b_k)) $
+
+Since we evaluate $f^((i))_(a')$ at $vec(b) = [ r_1, ..., r_j, b_(j+1), b_(j+2), ..., b_(s_i) ]$, with $b_(j+1) = {0, 1, 2, 3}$:
+
+$
+  tilde(f)_(vec(a')_i)^((i))(vec(b)) &= (tilde("eq")_((a'_(i) || 0))(b) + alpha dot tilde("eq")_((a'_(i) || 1))(b)) dot tilde(W)_(i+1)(vec(b)) dot tilde(W)_(i+1)(vec(b))
+$
+
+The $r_1, ..., r_j$'s are set by the verifier, as required by the sumcheck
+protocol. Remember, the goal is for the prover to evaluate each term
+in linear time, and to do so the prover needs an evaluation table of
+$tilde("eq")_((a'_(i) || 0))([b_(j+1), dots, b_(s_i)])$ and
+$tilde("eq")_((a'_(i) || 1))([b_(j+1), dots, b_(s_i)])$.
+
+For $j=0$ we can compute the table via the following reoccurance
+
+// We start by looking at the definition of $"eq"(a, b) in Fb^(s_i) times Fb^(s_i)
+// -> Fb$:
+
+// $ "eq"(vec(a), vec(b)) := product^(s_i)_(j=1) (a_j b_j + (1 - a_j) (1 - b_j)) $
+
+// Note that $vec(b)$ is fixed to a random value by the verifier. To compute a
+// table of all evaluations ($vec("eq") in Fb^(s_i) -> Fb$) of $"eq"(vec(a),
+// vec(b))$ it would naively take $s_i$ time per evaluation, and there are
+// $2^(s_i)$ total possible evaluations for $a_i in bits$, so $Oc(s_i 2^(s_i))$
+// time to compute $vec("eq")$. We use dynamic programming to bring this down
+// to $Oc(2^(s_i))$.
+
+// $
+//   vec("eq")^((0,1)) = a_1 b_1 + (1 - a_1) (1 - b_1) \
+//   vec("eq")^((0,j))(a_1, ..., a_j) = vec("eq")^((0, j-1))(a_1, ..., a_(j-1)) dot (a_j b_j + (1 - a_j) (1 - b_j))
+// $
+
+// Then $vec("eq")^((0, s_i)) = vec("eq")^((0))$ for round zero.
+
+*The Rounds*
+
+In round zero, then, we need to evaluate $"eq"(vec(a), vec(b))$ at a
+
+$ tilde(f)(X_1, ..., X_k) = sum_(w in bits^k) f(w) dot Xc_(w)(X_1, ..., X_k) $
+
+where, for any $vec(w)$:
+
+$ Xc_(vec(w))(X_1, ..., X_k) := product^k_(j=1) X_j w_i + (1 - X_i)(1-w_i) $
 
 = Spark
 
