@@ -198,7 +198,7 @@ $
                           &  &&(tilde("mul")_(1)(vec(b)'_0,vec(b),vec(c)) + alpha dot tilde("mul")_(1)(vec(c)'_0,vec(b),vec(c)))(tilde(W)_(2)(vec(b)) dot tilde(W)_(2)(vec(c)))
 $ <eq:combined-poly>
 
-The Lemma #footnote[This approach is also used in @libra, but they don't
+The Lemma #footnote[This approach is also used in Libra@libra, but they don't
 present a soundness proof since they deem it "trivial". The Lemma in this
 document also uses a single random variable rather than two.] below shows
 how this will help the prover-verifier pair in showing that $v_(vec(b)'_0)
