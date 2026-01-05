@@ -184,8 +184,29 @@
   )
 
   // Configure equation numbering.
-  set math.equation(numbering: "(1)")
+  show math.equation:it => {
+    if it.has("label") {
+      // Don't forget to change your numbering style in `numbering`
+      // to the one you actually want to use.
+      math.equation(block: true, numbering: "(1)", it)
+    } else {
+      it
+    }
+  }
 
+  show ref: it => {
+    let el = it.element
+    if el != none and el.func() == math.equation {
+      link(el.location(), [ Equation #numbering(
+        // don't forget to change the numbering according to the one
+        // you are actually using (e.g. section numbering)
+        "1",
+        counter(math.equation).at(el.location()).at(0) + 1
+      )])
+    } else {
+      it
+    }
+  }
   // Display inline code in a small box that retains the correct baseline.
   show raw.where(block: false): box.with(
     fill: fill-color.darken(2%),

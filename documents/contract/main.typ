@@ -7,7 +7,22 @@
   ),
 )
 
+#show math.equation:it => {
+  if it.fields().keys().contains("label"){
+    math.equation(block: true, numbering: "(1)", it)
+    // Don't forget to change your numbering style in `numbering`
+    // to the one you actually want to use.
+    //
+    // Note that you don't need to #set the numbering now.
+  } else {
+    it
+  }
+}
+
 = Project Contract
+
+$ x = 2 $
+$ x = 2 $<eq:lol>
 
 == Project Title
 

@@ -1,8 +1,17 @@
 GKR
+Hyrax
 Jakobsen
+MLE
 Pedersen
 Rasmus
+Shamir
+Thaler's
 multilinear
+notational
+polylogarithmic
 prover
+sublinear
 sumcheck
 sumchecks
+zkVM
+zkVMs
