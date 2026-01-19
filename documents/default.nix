@@ -4,17 +4,21 @@
   pkgs,
 }:
   let
+    typstPkgs = p: with p; [
+      gruvy_2_1_0
+      zebraw_0_6_0
+      fletcher_0_5_8
+      xarrow_0_3_1
+      theorion_0_4_1
+      oxifmt_0_2_1 # Nixpkgs support for typst is sort of janky
+      diatypst_0_8_0
+      polylux_0_4_0
+      metropolis-polylux_0_1_0
+    ];
     report = pkgs.buildTypstDocument {
       name = "report";
       src = ./report;
-      typstEnv = p: with p; [
-        gruvy_2_1_0
-        zebraw_0_6_0
-        fletcher_0_5_8
-        xarrow_0_3_1
-        theorion_0_4_1
-        oxifmt_0_2_1 # Nixpkgs support for typst is sort of janky
-      ];
+      typstEnv = typstPkgs;
       creationTimestamp = self.lastModified;
       fonts = [ pkgs.roboto ];
     };
@@ -24,26 +28,17 @@
       creationTimestamp = self.lastModified;
       fonts = [ pkgs.roboto ];
     };
-  # harper = pkgs.rustPlatform.buildRustPackage rec {
-  #   pname = "harper-test-program";
-  #   version = "0.34.1";
-
-  #   src = pkgs.fetchFromGitHub {
-  #     owner = "Automattic";
-  #     repo = "harper";
-  #     rev = "v${version}";
-  #     hash = "sha256-fBAPJhB+x8cIFs6rp1nDvrtVkAKx2wuFCO7FwHOwLRM=";
-  #   };
-
-  #   cargoHash = "sha256-XVC2xgUwazYXVp5sx6kA+aopd9m38XlbgsLnb0D92kg=";
-
-  #   meta = {
-  #     mainProgram = "harper-cli";
-  #   };
-  # };
+    slidesGkr = pkgs.buildTypstDocument {
+      name = "slides-gkr";
+      src = ./slides-gkr;
+      typstEnv = typstPkgs;
+      creationTimestamp = self.lastModified;
+      fonts = [ pkgs.roboto ];
+    };
 in {
   packages.report= report; 
   packages.contract = contract; 
+  packages.slidesGkr= slidesGkr; 
 
   devShells.default = pkgs.mkShellNoCC {
     inputsFrom = [ report ];
@@ -51,7 +46,6 @@ in {
       pkgs.tinymist
       pkgs.typstyle
       pkgs.harper
-      # harper
     ];
   };
 }

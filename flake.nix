@@ -30,6 +30,10 @@
             mkdir -p $out
             cp -a ${(documentsF pkgs).packages.contract} $out/contract.pdf
           '')
+          (pkgs.runCommand "slides" {} ''
+            mkdir -p $out
+            cp -a ${(documentsF pkgs).packages.slidesGkr} $out/slides-gkr.pdf
+          '')
         ];
         standalonePages = [{
           title = "From Bulletproofs to Lasso";
@@ -46,8 +50,12 @@
             location = "/report/report.pdf";
           }
           {
-            title = "Report";
+            title = "Contract";
             location = "/contract/contract.pdf";
+          }
+          {
+            title = "GKR Slides";
+            location = "/slides/slides-gkr.pdf";
           }
           {
             title = "Github";
@@ -75,6 +83,7 @@
         website = (websiteF pkgs).package;
         rust = (rustF pkgs).packages;
         report = (documentsF pkgs).packages.report;
+        slidesGkr = (documentsF pkgs).packages.slidesGkr;
         default = website;
       });
     };

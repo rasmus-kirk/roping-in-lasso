@@ -255,7 +255,7 @@ would be:
 
 $
   f_(1)(vec(b), vec(c)) &:= &&(tilde("add")_(1)(vec(b)'_0,vec(b),vec(c)) + alpha dot tilde("add")_(1)(vec(c)'_0,vec(b),vec(c)))(tilde(W)_(2)(vec(b)) + tilde(W)_(2)(vec(c))) + \
-                                                          &   &&(tilde("mul")_(1)(vec(b)'_0,vec(b),vec(c)) + alpha dot tilde("mul")_(1)(vec(c)'_0,vec(b),vec(c)))(tilde(W)_(2)(vec(b)) dot tilde(W)_(2)(vec(c)))
+                        &   &&(tilde("mul")_(1)(vec(b)'_0,vec(b),vec(c)) + alpha dot tilde("mul")_(1)(vec(c)'_0,vec(b),vec(c)))(tilde(W)_(2)(vec(b)) dot tilde(W)_(2)(vec(c)))
 $
 
 It should already now be apparent that we can repeat this procedure, all
@@ -582,7 +582,7 @@ $
           &= frac(s_0, |Fb|) + sum^(d-1)_(i=0) lg(S_i) frac(2, |Fb|) + sum^(d-1)_(i=1) frac(1, |Fb|) \
           &<= frac(lg(S), |Fb|) + sum^(d)_(i=0) frac(2 lg(S), |Fb|) + sum^(d)_(i=1) frac(1, |Fb|) \
           &= frac(lg(S), |Fb|) + frac(2 d lg(S), |Fb|) + frac(d, |Fb|) \
-            &= frac(3 d lg(S) + d, |Fb|) \
+          &= frac(3 d lg(S) + d, |Fb|) \
 $
 
 Which is negligible in the size of the field.
