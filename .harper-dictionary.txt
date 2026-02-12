@@ -8,6 +8,8 @@ R1CS
 Rasmus
 Shamir
 Thaler's
+Zippel
+bitstrings
 lifecycle
 multilinear
 multisets

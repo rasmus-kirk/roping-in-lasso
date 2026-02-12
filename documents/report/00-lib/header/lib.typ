@@ -52,6 +52,10 @@
 #let Xc = math.cal("X")
 #let bits = math.bb("B")
 #let Fb = math.bb("F")
+#let Nb = math.bb("N")
+#let nats = math.bb("N")
+#let Nat = math.bb("N")
+#let Bool = math.bb("B")
 #let inrand = $attach(in, br: R)$
 #let vec(body) = $bold(body)$
 #let innerprod(A, B) = $chevron.l #A, #B chevron.r$

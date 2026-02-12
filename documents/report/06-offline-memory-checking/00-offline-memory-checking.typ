@@ -9,14 +9,7 @@
 #let TODO = text(weight: "bold", size: 1.2em,  "TODO")
 #let ts = $t s$
 
-= Spark
-
-This chapter is dedicated to Spark...
-
-First we'll cover offline memory-checking, an important primitive both for
-Spark, but also generally applicable to ZKVM's.
-
-== Offline Memory-Checking
+= Offline Memory-Checking
 
 In offline-memory checking the goal is for a potentially malicious prover
 ($prover$) to control a RAM for the verifier to access. The verifier
@@ -159,7 +152,7 @@ answer is that we can store these sets as a digest instead. Each time we add
 to each set we append the element to the running hash and in the end of the
 protocol we compare the digests rather than the multi-sets.
 
-== Spark
+== Spark - Constructing a Sparse Polynomial Commitment Scheme
 
 In Spark, we apply the offline memory-checking primitive in an alternative
 way. Here, the prover itself is the one that reads a public read-only RAM,
@@ -268,119 +261,3 @@ $ h meq product_((a, v, t) in RS union Audit) a + alpha v + alpha^2 t meq produc
 
 Which is an excellent use-case for the specialized GKR protocol in
 @sec:specialized-gkr.
-
-== Introducing Cryptographic Assumptions
-
-You may reasonably ask how the prover additionally proves that these sets were
-generated from running the algorithms outlined in @fig:omc-verifier-procedure,
-but it can for now simply be assumed that a trusted party ran and obtained
-these values honestly. More concretely, we can introduce a _commitment scheme_.
-
-== Spark
-
-In our case, the prover 
-
-= R1CS
-
-A popular alternative to GKR's layered circuit representation is R1CS. This
-proof system represents computation of an arithmetic circuit as a system of
-linear constraints combined with a single multiplication per constraint:
-
-$ vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) $
-
-Where $vec(w) in Fb^n$ is the witness vector containing all inputs, outputs,
-and intermediate variables of the circuit and $vec(A), vec(B), vec(C) in
-Fb^(m times n)$ are sparse matrices encoding the structure of the circuit.
-
-Unlike GKR, which requires the circuit to be organized into layers of uniform
-depth, R1CS allows for "flat" structures where any variable can interact
-with any other. This has led to R1CS becoming a sort of _lingua franca_
-for SNARK circuits the last decade or so.
-
-#example(title: "A Small R1CS Circuit")[
-  Consider the following example circuit, which computes $y_1 = (w_1 + w_2)
-  dot w_3$:
-
-  #align(center, [
-    #diagram(debug: 0, node-stroke: 1pt, {
-      // Layer 1
-      let w1 = (0, 0)
-      let w2 = (0, 1)
-      let w3 = (0, 2)
-      node(shape: rect, w1, [$w_1$])
-      node(shape: rect, w2, [$w_2$])
-      node(shape: rect, w3, [$w_3$])
-
-      // Layer 2
-      let add = (1, 0.5)
-      node(shape: circle, add, $+$)
-      edge(w1, (add.at(0), w1.at(1)), add, "->")
-      edge(w2, (add.at(0), w2.at(1)), add, "->")
-
-      // Layer 3
-      let w1_plus_w2 = (2, 0.5)
-      node(stroke: 0em, w1_plus_w2, $w_1 + w_2$)
-      edge(add, w1_plus_w2, "-")
-
-      // Layer 4
-      let mult = (3, 1.25)
-      node(shape: circle, mult, $times$)
-      edge(w3, (mult.at(0), w3.at(1)), mult, "->")
-      edge(w1_plus_w2, (mult.at(0), w1_plus_w2.at(1)), mult, "->")
-
-      // Layer 5
-      let res = (4, 1.25)
-      node(stroke: 0em, res, $(w_1 + w_2) dot w_3$)
-      edge(mult, res, "-")
-
-      // Layer 6
-      let out = (5, 1.25)
-      node(shape: rect, out, $y_1$)
-      edge(res, out, "->")
-    })
-  ])
-
-  First, we define the witness vector $w$. It contains the constant $1$,
-  the input variables, and the output variable:
-
-  $ vec(w) = mat(1, w_1, w_2, w_3, y_1)^top $
-
-  The constant one, is so that we may model constants in the circuit. Since
-  there is only one multiplication gate in our example, the matrices will
-  have only a single row.
-
-  - *Matrix $vec(A)$ (Left Input):* Selects $w_1, w_2$. Note, addition does
-    not grow the dimension of the matrices.
-  - *Matrix $vec(B)$ (Right Input):* Selects $w_3$.
-  - *Matrix $vec(C)$ (Output):* Selects $y_1$.
-
-  $
-    vec(A) = mat(0, 1, 1, 0, 0), quad
-    vec(B) = mat(0, 0, 0, 1, 0), quad
-    vec(C) = mat(0, 0, 0, 0, 1)
-  $
-
-  $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $
-
-  To verify, we take the dot product of the row with the witness:
-
-  $
-
-  vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) ==> \ 
-  underbrace( (0 + 0 + 0 + 0 + 1 dot y_1), "Output: " y_1 )
-  &=
-  underbrace( (0 dot 1 + 1 dot w_1 + 1 dot w_2 + 0 + 0), "Left Input: " (w_1 + w_2) )
-  dot
-  underbrace( (0 + 0 + 0 + 1 dot w_3 + 0), "Right Input: " w_3 ) ==> \
-  y_1 &= w_1 + w_2 dot w_3
-  $
-
-  So to check whether the circuit is satisfied, the verifier can boil the
-  check down to just $vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w)$.
-]
-
-== From Matrices to Polynomials (QAP)
-
-We can model $vec(M) in { vec(A), vec(B), vec(C) }$ with its multilinear extension:
-
-$ tilde(M)(vec(x), vec(y)) = sum_(vec(a) in bits^m) sum_(vec(b) in bits^n) M_(a, b) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) $

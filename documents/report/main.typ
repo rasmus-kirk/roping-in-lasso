@@ -32,5 +32,6 @@
 #include "./02-prerequisites/00-prerequisites.typ"
 #include "./03-gkr/00-gkr.typ"
 #include "./04-specialized-gkr/00-specialized-gkr.typ"
-#include "./05-offline-memory-checking/00-offline-memory-checking.typ"
+#include "./05-r1cs/00-r1cs.typ"
+#include "./06-offline-memory-checking/00-offline-memory-checking.typ"
 // #include "./06-conclusion/00-conclusion.typ"

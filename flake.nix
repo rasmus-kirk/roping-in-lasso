@@ -1,9 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/master";
-    # Provides helpers for Rust toolchains
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
     # The website builder
     website-builder.url = "github:rasmus-kirk/website-builder";
     website-builder.inputs.nixpkgs.follows = "nixpkgs";
@@ -15,7 +12,6 @@
   outputs = { self, nixpkgs, website-builder, press, ...}:
     let
       documentsF = pkgs: pkgs.callPackage ./documents { self = self; };
-      rustF = pkgs: pkgs.callPackage ./code { self = self; };
       websiteF = pkgs: website-builder.lib {
         pkgs = pkgs;
         src = ./.;
@@ -75,13 +71,11 @@
       formatter = forAllSystems ({pkgs}: pkgs.alejandra);
 
       devShells = forAllSystems ({ pkgs } : {
-        rust = (rustF pkgs).devShells.default;
         report = (documentsF pkgs).devShells.default;
       });
 
       packages = forAllSystems ({ pkgs }: rec {
         website = (websiteF pkgs).package;
-        rust = (rustF pkgs).packages;
         report = (documentsF pkgs).packages.report;
         slidesGkr = (documentsF pkgs).packages.slidesGkr;
         default = website;
