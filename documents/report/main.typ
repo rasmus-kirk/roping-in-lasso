@@ -17,16 +17,11 @@
     on, by introcing them within a single reference.
   ]),
   date-format: "[year repr:full]-[month padding:zero]-[day padding:zero]",
-  bibliography: bibliography("refs.bib", style: "./refs-style-2.csl"),
+  bibliography: bibliography("refs.bib", style: "./refs-style.csl"),
   figure-index: (enabled: false),
   table-index: (enabled: true),
   listing-index: (enabled: true),
 )
-
-- Memory checking
-  - [ ] Read and understand proofs/paper
-  - [ ] Fluff
-  - [ ] Proofs
 
 #include "./01-introduction/00-introduction.typ"
 #include "./02-prerequisites/00-prerequisites.typ"
@@ -34,4 +29,3 @@
 #include "./04-specialized-gkr/00-specialized-gkr.typ"
 #include "./05-r1cs/00-r1cs.typ"
 #include "./06-offline-memory-checking/00-offline-memory-checking.typ"
-// #include "./06-conclusion/00-conclusion.typ"
