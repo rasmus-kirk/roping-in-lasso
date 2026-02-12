@@ -108,7 +108,7 @@ start with the following three functions:
 We can use the multilinear extensions of $"add"_i$ and $"mul"_i$ to represent
 $W_(i)$ in a form that lets us use sumcheck:
 
-$ tilde(W)_(i)(vec(a)) = sum_(vec(b),vec(c) in bits^(s_(i+1))) tilde("add")_(i)(vec(a),vec(b),vec(c))(tilde(W)_(i+1)(vec(b)) + tilde(W)_(i+1)(vec(c))) + tilde("mult")_(i)(vec(a),vec(b),vec(c)) dot tilde(W)_(i+1)(vec(b)) dot tilde(W)_(i+1)(vec(c)) $<eq:tilde-w>
+$ tilde(W)_(i)(vec(a)) = sum_(vec(b),vec(c) in bits^(s_(i+1))) tilde("add")_(i)(vec(a),vec(b),vec(c))(tilde(W)_(i+1)(vec(b)) + tilde(W)_(i+1)(vec(c))) + tilde("mul")_(i)(vec(a),vec(b),vec(c)) dot tilde(W)_(i+1)(vec(b)) dot tilde(W)_(i+1)(vec(c)) $<eq:tilde-w>
 
 #lemma[
   The above equation for $tilde(W)_(i)(vec(a))$ is indeed the multilinear extension of $W_(i)(vec(a))$
@@ -126,7 +126,7 @@ $ tilde(W)_(i)(vec(a)) = sum_(vec(b),vec(c) in bits^(s_(i+1))) tilde("add")_(i)(
   extensions of their respective functions. We should therefore also be able
   to rewrite @eq:tilde-w like so:
 
-  $ tilde(W)_(i)(vec(a) in bits^(s_i)) = sum_(vec(b),vec(c) in bits^(s_(i+1))) "add"_(i)(vec(a),vec(b),vec(c))(W_(i+1)(vec(b)) + W_(i+1)(vec(c))) + "mult"_(i)(vec(a),vec(b),vec(c)) dot W_(i+1)(vec(b)) dot W_(i+1)(vec(c)) $
+  $ tilde(W)_(i)(vec(a) in bits^(s_i)) = sum_(vec(b),vec(c) in bits^(s_(i+1))) "add"_(i)(vec(a),vec(b),vec(c))(W_(i+1)(vec(b)) + W_(i+1)(vec(c))) + "mul"_(i)(vec(a),vec(b),vec(c)) dot W_(i+1)(vec(b)) dot W_(i+1)(vec(c)) $
 
   The definitions of $"add"_i, "mul"_i$ state that they are only active when
   the given gate label is an addition or multiplication gate respectively. Thus,
@@ -153,9 +153,9 @@ a uniformly random $vec(r)$ and wishes to verify that $tilde(W)'(vec(r))
 tilde(W)_0$, and by definition of MLE's $W' = W_0$. Therefore, $prover$
 and verifier apply sumcheck to the following polynomial:
 
-$ f_(0)(vec(b), vec(c)) = tilde("add")_(0)(vec(r),vec(b),vec(c))(tilde(W)_1(vec(b)) + tilde(W)_1(vec(c))) + tilde("mult")_(0)(vec(r),vec(b),vec(c)) dot tilde(W)_1(vec(b)) dot tilde(W)_1(vec(c)) $
+$ f_(0)(vec(b), vec(c)) = tilde("add")_(0)(vec(r),vec(b),vec(c))(tilde(W)_1(vec(b)) + tilde(W)_1(vec(c))) + tilde("mul")_(0)(vec(r),vec(b),vec(c)) dot tilde(W)_1(vec(b)) dot tilde(W)_1(vec(c)) $
 
-Which, if succesful, convinces $verifier$ that $tilde(W)'(vec(r)) =
+Which, if successful, convinces $verifier$ that $tilde(W)'(vec(r)) =
 tilde(W)_0(vec(r)) ==> W' = W_0$ as desired. But in the final round of the
 sumcheck protocol, $verifier$ must be able to evaluate the above polynomial
 at a random point. The functions $tilde("add")_0$ and $tilde("mul")_0$ are part
@@ -166,13 +166,13 @@ sublinear verifier if this IP is turned into an Interactive Argument.]. But
 $verifier$ also needs to evaluate $tilde(W_1)$ at two separate random points
 $vec(b)'_0, vec(c)'_0 inrand Fb^(s_1)$ corresponding to $vec(b), vec(c)$:
 
-$ f_(0)(vec(b)'_0, vec(c)'_0) = tilde("add")_(0)(vec(r),vec(b)'_0,vec(c)'_0)(tilde(W)_1(vec(b)'_0) + tilde(W)_1(vec(c)'_0)) + tilde("mult")_(0)(vec(r),vec(b)'_0,vec(c)'_0) dot tilde(W)_1(vec(b)'_0) dot tilde(W)_1(vec(c)'_0) $
+$ f_(0)(vec(b)'_0, vec(c)'_0) = tilde("add")_(0)(vec(r),vec(b)'_0,vec(c)'_0)(tilde(W)_1(vec(b)'_0) + tilde(W)_1(vec(c)'_0)) + tilde("mul")_(0)(vec(r),vec(b)'_0,vec(c)'_0) dot tilde(W)_1(vec(b)'_0) dot tilde(W)_1(vec(c)'_0) $
 
 In principle, we could run the sumcheck protocol twice, on the polynomials:
 
 $
-  f_(1)(vec(b), vec(c)) &= tilde("add")_(1)(vec(b)'_0,vec(b),vec(c))(tilde(W)_2(vec(b)) + tilde(W)_2(vec(c))) + tilde("mult")_(1)(vec(b)'_1,vec(b),vec(c)) dot tilde(W)_2(vec(b)) dot tilde(W)_2(vec(c)) \
-  f_(1)(vec(b), vec(c)) &= tilde("add")_(1)(vec(c)'_0,vec(b),vec(c))(tilde(W)_2(vec(b)) + tilde(W)_2(vec(c))) + tilde("mult")_(1)(vec(c)'_1,vec(b),vec(c)) dot tilde(W)_2(vec(b)) dot tilde(W)_2(vec(c))
+  f_(1)(vec(b), vec(c)) &= tilde("add")_(1)(vec(b)'_0,vec(b),vec(c))(tilde(W)_2(vec(b)) + tilde(W)_2(vec(c))) + tilde("mul")_(1)(vec(b)'_1,vec(b),vec(c)) dot tilde(W)_2(vec(b)) dot tilde(W)_2(vec(c)) \
+  f_(1)(vec(b), vec(c)) &= tilde("add")_(1)(vec(c)'_0,vec(b),vec(c))(tilde(W)_2(vec(b)) + tilde(W)_2(vec(c))) + tilde("mul")_(1)(vec(c)'_1,vec(b),vec(c)) dot tilde(W)_2(vec(b)) dot tilde(W)_2(vec(c))
 $ <eq:two-fs>
 
 But this would result in an exponential amount of sumchecks in the depth $d$,
@@ -248,7 +248,7 @@ that $q(vec(b)'_0, vec(c)'_0) = v_(vec(b)'_0) + alpha dot v_(vec(c)'_0)$.
 With $v_(vec(b)'_0)$ and $v_(vec(c)'_0)$ $verifier$ can compute the evaluation of
 $f_(0)(vec(b)'_0, vec(c)'_0)$:
 
-$ f_(0)(vec(b)'_0, vec(c)'_0) = tilde("add")_(0)(vec(r),vec(b)'_0,vec(c)'_0)(v_(vec(b)'_0) + v_(vec(c)'_0)) + tilde("mult")_(0)(vec(r),vec(b)'_0,vec(c)'_0) dot v_(vec(b)'_0) dot v_(vec(c)'_0) $
+$ f_(0)(vec(b)'_0, vec(c)'_0) = tilde("add")_(0)(vec(r),vec(b)'_0,vec(c)'_0)(v_(vec(b)'_0) + v_(vec(c)'_0)) + tilde("mul")_(0)(vec(r),vec(b)'_0,vec(c)'_0) dot v_(vec(b)'_0) dot v_(vec(c)'_0) $
 
 Thus, when we proceed to layer one, the polynomial we do sumcheck on
 would be:
@@ -337,7 +337,7 @@ The entire protocol can be seen on the next page:
       $prover$ defines the $(2s_i)$-variate polynomial,
       $f_(0)(vec(b), vec(c))$, $prover$ and $verifier$ then perform
       sumcheck on the polynomial:
-      $ f_(0)(vec(b), vec(c)) = tilde("add")_(0)(vec(r),vec(b),vec(c))(tilde(W)_1(vec(b)) + tilde(W)_1(vec(c))) + tilde("mul")_(0)(vec(r),vec(b),vec(c)) tilde(W)_1(vec(b)) dot tilde(W)_1(vec(c)) $
+      $ f_(0)(vec(b), vec(c)) = tilde("add")_(0)(vec(r),vec(b),vec(c))(tilde(W)_1(vec(b)) + tilde(W)_1(vec(c))) + tilde("mul")_(0)(vec(r),vec(b),vec(c)) dot tilde(W)_1(vec(b)) dot tilde(W)_1(vec(c)) $
     ]))
     P.at(1) += h; M.at(1) += h; V.at(1) += h;
 
@@ -374,8 +374,8 @@ The entire protocol can be seen on the next page:
       the sumcheck over:
 
       $
-        f_(i)(vec(b), vec(c)) &:= &&(tilde("add")_(i)(vec(b)'_(i-1),vec(b),vec(c)) + tilde("add")_(i)(vec(c)'_(i-1),vec(b),vec(c)))(tilde(W)_(i+1)(vec(b)) + tilde(W)_(i+1)(vec(c))) + \
-                                       &   &&(tilde("mul")_(i)(vec(b)'_(i-1),vec(b),vec(c)) + tilde("mul")_(i)(vec(c)'_(i-1),vec(b),vec(c)))(tilde(W)_(i+1)(vec(b)) dot tilde(W)_(i+1)(vec(c)))
+        f_(i)(vec(b), vec(c)) &:= &&(tilde("add")_(i)(vec(b)'_(i-1),vec(b),vec(c)) + alpha dot tilde("add")_(i)(vec(c)'_(i-1),vec(b),vec(c)))(tilde(W)_(i+1)(vec(b)) + tilde(W)_(i+1)(vec(c))) + \
+                                       &   &&(tilde("mul")_(i)(vec(b)'_(i-1),vec(b),vec(c)) + alpha dot tilde("mul")_(i)(vec(c)'_(i-1),vec(b),vec(c)))(tilde(W)_(i+1)(vec(b)) dot tilde(W)_(i+1)(vec(c)))
       $
     ]))
     P.at(1) += h/1.8; M.at(1) += h/1.8; V.at(1) += h/1.8; 
@@ -487,7 +487,7 @@ of sumcheck, as $v_(b'_i), v_(c'_i)$ are provided by $prover$. $verifier$
 only needs to evaluate $tilde("add")(vec(a),vec(b),vec(c)),
 tilde("mul")(vec(a),vec(b),vec(c))$ in each round. Let's say _all_
 these evaluations throughout the protocol costs $t$. If $tilde("add"),
-tilde("add")$ has no special structure for $verifier$ to exploit, we
+tilde("mul")$ has no special structure for $verifier$ to exploit, we
 can set $t = O(sum_(i=0)^d S_i) = O(S)$ following the discussion above. In the
 final round, $verifier$ needs to evaluate $tilde(W)_(d)(vec(b)'_(d-1)),
 tilde(W)_(d)(vec(c)'_(d-1))$. Both evaluations cost $2^(s_d) = n$ by

@@ -14,7 +14,7 @@
     execution for RISC-V programs via large table lookups, drastically reducing
     complexity and prover costs compared to earlier zkVMs. The document
     assumes minimal familiarity with the constructions that Lasso builds
-    on, by introcing them within a single reference.
+    on, by introducing them within a single reference.
   ]),
   date-format: "[year repr:full]-[month padding:zero]-[day padding:zero]",
   bibliography: bibliography("refs.bib", style: "./refs-style.csl"),

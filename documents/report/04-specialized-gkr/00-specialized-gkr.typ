@@ -227,7 +227,7 @@ Let $vec(v) = vec(r)_(i-1) || 0$ for $tilde("eq")_((vec(r)_(i-1) || 0))$, $vec(v
 = vec(r)_(i-1) || 1$ for $tilde("eq")_((vec(r)_(i-1) || 1))$ and $ell := |vec(v)| = i$.
 Then the definition of $tilde("eq")_vec(v)$ is:
 
-$ tilde("eq")_vec(v)(vec(b)) = product^(j)_(k=1) (v_k r_k + (1 - v_k) + (1 - r_k)) + product^(ell)_(k=j+1) (v_k b_k + (1 - v_k) + (1 - b_k)) $
+$ tilde("eq")_vec(v)(vec(b)) = product^(j)_(k=1) (v_k r_k + (1 - v_k) (1 - r_k)) dot product^(ell)_(k=j+1) (v_k b_k + (1 - v_k) (1 - b_k)) $
 
 With the $r_1, ..., r_j$'s set by the verifier, as required by
 the sumcheck protocol. Now, $prover$ needs an evaluation table of
@@ -296,9 +296,9 @@ $
   tilde(W)(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell)) &= &&sum_(vec(b) in bits^ell) tilde("eq")(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell), vec(b)) dot W_(i+1)(vec(b)) \
                                                         &= &&sum_(vec(b) in bits^ell) tilde("eq")_vec(r)(b_1, ..., b_(j-1)) dot tilde("eq")_(t)(b_j) dot tilde("eq")_vec(x)(b_(j+1), ..., b_ell) dot W_(i+1)(vec(b)) \
                                                         &= &&sum_(vec(b) in bits^ell) tilde("eq")_vec(r)(b_1, ..., b_(j-1)) dot tilde("eq")_(t)(b_j) dot W_(i+1)(b_1, ..., b_j, x_(j+1), ..., x_ell) \
-                                                        &= &&sum_(vec(b)) in bits^ell) tilde("eq")_vec(r)(b_1, ..., b_(j-1)) dot tilde("eq")_(0)(b_j) dot W_(i+1)(b_1, ..., b_j, x_(j+1), ..., x_ell) + \
+                                                        &= &&sum_(vec(b) in bits^ell) tilde("eq")_vec(r)(b_1, ..., b_(j-1)) dot tilde("eq")_(0)(b_j) dot W_(i+1)(b_1, ..., b_j, x_(j+1), ..., x_ell) + \
                                                         &  &&sum_(vec(b) in bits^ell) tilde("eq")_vec(r)(b_1, ..., b_(j-1)) dot tilde("eq")_(1)(b_j) dot W_(i+1)(b_1, ..., b_j, x_(j+1), ..., x_ell)   \
-                                                        &= &&hat(W)_(j-1)[(0,x_(j+1), ..., x_ell)] dot tilde("eq")_0(t) + hat(W)_(j-1)[(0,x_(j+1), ..., x_ell)] dot tilde("eq")_1(t) \
+                                                        &= &&hat(W)_(j-1)[(0,x_(j+1), ..., x_ell)] dot tilde("eq")_0(t) + hat(W)_(j-1)[(1,x_(j+1), ..., x_ell)] dot tilde("eq")_1(t) \
 $
 
 In constant time.
@@ -341,7 +341,7 @@ $
 *Verifier runtime:* $O(lg^2(n) + n)$
 
 As argued in @sec:gkr-efficiency, the verifier workload is proportional to
-the communication cost $O(n^2)$, plus an evaluation of the input layer $O(n)$, plus
+the communication cost $O(lg^2(n))$, plus an evaluation of the input layer $O(n)$, plus
 all the evaluations of $tilde("add"), tilde("mul")$ ($O(t)$). Evaluating
 $tilde("add"), tilde("mul")$ is just evaluating $tilde("eq")$, which as
 argued in @sec:mle, can be done in $O(ell) = O(i)$ time. This gives us:

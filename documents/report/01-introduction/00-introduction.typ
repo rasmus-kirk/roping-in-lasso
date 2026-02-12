@@ -16,7 +16,7 @@ time compared to the circuit size, of the correct output. Communication is
 also polylogarithmic.
 
 From a complexity-theoretic perspective, GKR provides a constructive
-interactive proof for any layered arithmetic circuit. Demonstrating that
+interactive proof for any layered arithmetic circuit, demonstrating that
 languages in P admit proofs where the verifier runs in polylogarithmic time
 in the circuit size, while the prover runs in polynomial time. The protocol
 leverages the algebraic structure of circuits to achieve these bounds.

@@ -18,7 +18,7 @@ Throughout this document we use the following notation:
   [A field element of an unspecified field.],
   // Vector
   $(a_1, ..., a_n) = vec(a) in Fb^n$,
-  [A vector of length $n$ consisting of elements from set $S$.],
+  [A vector of length $n$ consisting of elements from $Fb$.],
   // Random sampling
   $a inrand S$,
   [A value randomly sampled from set $S$.],
@@ -28,7 +28,7 @@ Throughout this document we use the following notation:
   // Vector-element concatenation
   [$vec(a) || b$ where $vec(a) in S^n, b in S$],
   [Concatenate $vec(a), b$ to create a vector $vec(c) in S^(n+1)$.],
-  // Vector-element concatenation
+  // Boolean
   [$bits = { 0, 1 }$],
   [A boolean or bit.],
   // Multivariate Polynomial
@@ -36,7 +36,7 @@ Throughout this document we use the following notation:
   [A multivariate polynomial with $n$ variables.],
   // MLE
   [$tilde(f)$],
-  [A multilinear extension of the boolean function $f in bits^n -> bits$.],
+  [A multilinear extension of the function $f$.],
   // Lookup table
   [$hat(f) in bits^n -> Fb$],
   [A lookup table.],
@@ -45,7 +45,7 @@ Throughout this document we use the following notation:
 
 == Multilinear Extensions<sec:mle>
 
-Given any function $f(vec(x)) in bits^ell -> bits$, we can create
+Given any function $f(vec(x)) in bits^ell -> Fb$, we can create
 an extension polynomial $tilde(f)(vec(x))$ such that $forall vec(b)
 in bits^ell : tilde(f)(vec(b)) = f(vec(b))$ using Lagrange interpolation:
 
@@ -83,7 +83,7 @@ of Dynamic Programming.
 
   We first trivially construct $hat("eq")_(vec(x))^(1)(vec(b))$ in
   $O(1)$ time. Then, we construct $hat("eq")_(vec(x))^(k)(vec(b))$ for
-  each $k in [1..k]$ using Dynamic Programming, which takes $Oc(2^k)$
+  each $k in [1..ell]$ using Dynamic Programming, which takes $Oc(2^k)$
   time and space. Finally, we get $hat("eq")_(vec(x))(vec(b)) =
   hat("eq")_vec(x)^((k))(vec(b))$.
 ]
@@ -96,7 +96,7 @@ of Dynamic Programming.
     hat("eq")_(vec(x))^((2))[(0, 0)] &:= hat("eq")_(vec(x))^((1))[(0)] dot (1 - x_2) &&= (1 - x_1) dot (1 - x_2) \
     hat("eq")_(vec(x))^((2))[(0, 1)] &:= hat("eq")_(vec(x))^((1))[(0)] dot x_2 &&= (1 - x_1) dot x_2 \
     hat("eq")_(vec(x))^((2))[(1, 0)] &:= hat("eq")_(vec(x))^((1))[(1)] dot (1 - x_2) &&= x_1 dot (1 - x_2) \
-    hat("eq")_(vec(x))^((2))[(1, 0)] &:= hat("eq")_(vec(x))^((1))[(1)] dot x_2 &&= x_1 dot x_2 \
+    hat("eq")_(vec(x))^((2))[(1, 1)] &:= hat("eq")_(vec(x))^((1))[(1)] dot x_2 &&= x_1 dot x_2 \
   $
   Each lookup in $hat("eq")_(vec(x))^((k-1))$ is constant and computing each new entry in
   $hat("eq")_(vec(x))^((k))$ takes constant time. There are $2^k$ entries in
@@ -109,7 +109,7 @@ Then we can compute the evaluation of any $tilde(f)(vec(x))$ by utilizing
 $ tilde(f)(vec(x)) := sum_(vec(b) in bits^ell) f(vec(b)) dot hat("eq")_(vec(x))(vec(b)) $
 
 #corollary[
-  For any function $f(vec(x)) in bits^ell -> bits$, its multilinear extension
+  For any function $f(vec(x)) in bits^ell -> Fb$, its multilinear extension
   $tilde(f)(vec(x))$ can be computed using $O(2^ell)$ time and space.
 ]<cor:linear-mle>
 
@@ -119,7 +119,7 @@ The sumcheck protocol is an Interactive Proof where the prover, $prover$,
 wishes to convince the verifier, $verifier$, of a statement of the following
 form:
 
-$ y := sum_(b_1 in bits) sum_(b_2 in bits) dots sum_(b_ell in bits) g(b_1, dots, b_v) $
+$ y := sum_(b_1 in bits) sum_(b_2 in bits) dots sum_(b_ell in bits) g(b_1, dots, b_ell) $
 
 At a high-level, $prover$ starts by sending the claimed value of $g(vec(x))$.
 The protocol then proceeds in $ell$ rounds, wherein each round a single sum
