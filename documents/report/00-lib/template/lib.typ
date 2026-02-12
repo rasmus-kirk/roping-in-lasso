@@ -226,7 +226,7 @@
     stroke: (0.5pt + stroke-color),
   )
   // Use smallcaps for table header row.
-  show table.cell.where(y: 0): smallcaps
+  // show table.cell.where(y: 0): smallcaps
 
   // Wrap `body` in curly braces so that it has its own context. This way show/set rules
   // will only apply to body.

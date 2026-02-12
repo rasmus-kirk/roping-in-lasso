@@ -20,7 +20,7 @@
         pkgs = pkgs;
         src = ./.;
         timestamp = self.lastModified;
-        headerTitle = "From Bulletproofs to Lasso";
+        headerTitle = "Roping in Lasso";
         includedDirs = [
           (pkgs.runCommand "report" {} ''
             mkdir -p $out
@@ -59,7 +59,7 @@
           }
           {
             title = "Github";
-            location = "https://github.com/rasmus-kirk/from-bulletproofs-to-lasso";
+            location = "https://github.com/rasmus-kirk/roping-in-lasso";
           }
         ];
       };

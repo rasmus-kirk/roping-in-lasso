@@ -1,185 +1,386 @@
 #import "../00-lib/header/lib.typ": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
+#import "@preview/algo:0.3.6": algo, i, d, comment, code
 
 #let Init = "Init"
+#let WS = "WS"
+#let RS = "RS"
 #let Audit = "Audit"
+#let TODO = text(weight: "bold", size: 1.2em,  "TODO")
+#let ts = $t s$
 
-= Offline Memory Checking
+= Spark
 
-== Non-slop
+This chapter is dedicated to Spark...
 
-We need to prove that
+First we'll cover offline memory-checking, an important primitive both for
+Spark, but also generally applicable to ZKVM's.
 
-$ product_(tau in S_W) tau_0 + gamma tau_1 + gamma^2 tau_2 = product_(tau in S_R) tau_0 + gamma tau_1 + gamma^2 tau_2 $
+== Offline Memory-Checking
 
-Where:
+In offline-memory checking the goal is for a potentially malicious prover
+($prover$) to control a RAM for the verifier to access. The verifier
+($verifier$) can read and write to this RAM and verify that each read
+accesses the last write performed on that address. We can model a RAM as
+list of values:
 
-$
-  tau_i &:= (a, v, t) \
-  S_W &:= Init union W \
-  S_R &:= Audit union R \
-$
+$ vec("RAM") = [v_1, ..., v_m] $
 
-$a$ is the address, $v$ is the value stored at that address and $t$ is the
-timestamp associated with that address. The Specialized Grand product allows
-us to compute whether $y meq product_(i = 1)^(|vec(w)|)$, but we also need
-to make sure that the entries has additional structure. For example for $Init$:
+We can include _timestamps_ in this list corresponding to the time that
+the last write occurred at an address. Specifically, this represents the
+number of times each address has been accessed:
 
-$
-  Init := { tau_i = (i, tilde("eq")(i, r_x)), 0 }
-$
+$ vec("RAM") = [(v_1, t_1), ..., (v_m, t_m)] $
 
-The verifier could of course compute this themselves, but I'm still not sure
-how this would be handled if we wanted to use a commitment to $vec(w)$. We
-want to support commitments to eliminate the linear factor in the verifier's
-verification and the linear factor in the proof size/communication complexity.
+Of course, it's equally valid to model this as a multi-set with an extra
+tuple value indicating the address:
 
-== Slop
+$ "RAM" = { (a_1, v_1, t_1), ..., (a_m, v_m, t_m) } = { (1, v_1, t_1), ..., (n, v_m, t_m) } $
 
-In the previous chapters, we established efficient protocols for checking layered arithmetic circuits (GKR) and specialized structures like Grand Products. However, standard circuit models struggle to efficiently represent Random Access Memory (RAM). Simulating a RAM access in a circuit requires a multiplexer of size $O(N)$ (where $N$ is the memory size) or a permutation network, both of which are prohibitively expensive for large memories.
-
-To support efficient RAM (and by extension, Lookup Tables as used in Lasso), we turn to *Offline Memory Checking*. Instead of verifying every memory access as it happens (Online), the Prover commits to a trace of all memory operations, and the Verifier checks the consistency of this trace globally.
-
-This section presents the foundational logic for offline memory checking using multiset equality.
-
-== The Memory Model
-
-We model memory as a collection of cells addressed by indices $a in {0, ..., N-1}$. The state of the memory evolves over a series of $M$ operations (Reads and Writes). 
-
-To ensure consistency—specifically, that "every Read returns the value of the most recent Write"—we must track not just the value $v$ and address $a$, but also a timestamp $t$.
-
-We define a *Memory Tuple* as:
-$ tau = (a, v, t) $
-Where:
-- $a$ is the memory address.
-- $v$ is the value stored at that address.
-- $t$ is the global logical time step at which this value was written.
-
-=== The Multisets
-
-We track the lifecycle of memory cells using two multisets (sets allowing duplicates), $S_"in"$ and $S_"out"$. Conceptually, $S_"in"$ represents all tuples *entering* the memory, and $S_"out"$ represents all tuples *leaving* the memory.
-
-Let the sequence of operations be $"op"_1, ..., "op"_M$. We maintain a global clock $T$, initialized to $0$.
-
-1.  *Init:* At $T=0$, the memory is initialized. For every address $a$, we implicitly write an initial value (e.g., $0$).
-    $ "Init" = { (a, 0, 0) | a in {0, ..., N-1} } $
-
-2.  *Execution:* For each operation $k$ accessing address $a$ with a new value $v_"new"$ (for a Read, $v_"new" = v_"old"$):
-    - The Prover reads the current state of address $a$, retrieving a tuple $(a, v_"old", t_"old")$.
-    - This tuple is added to the read-set $R$.
-    - The Prover updates the memory with the new tuple $(a, v_"new", k)$.
-    - This tuple is added to the write-set $W$.
-
-3.  *Audit:* After step $M$, the memory is in a final state. We read out the entire memory state to ensure these final values are accounted for.
-    $ "Audit" = { (a, v, t)_"final" | a in {0, ..., N-1} } $
-
-We define our two primary sets for comparison:
-$
-  S_"in" &:= "Init" union W \
-  S_"out" &:= R union "Audit"
-$
-
-== Correctness of Memory
-
-For a memory trace to be valid, the history of values read must exactly match the history of values written. Furthermore, time must move forward.
-
-#theorem[
-  A sequence of memory operations is valid if and only if:
-  1.  *Multiset Equality:* The multiset of tuples entering memory equals the multiset of tuples leaving memory:
-      $ "Init" union W equiv R union "Audit" $
-  2.  *Temporal Ordering:* For every read operation at global time $T_"curr"$ retrieving a tuple $(a, v, t_"prev")$, it holds that $t_"prev" < T_"curr"$.
-] <thm:mem-check>
-
-The *Temporal Ordering* check is a local check (usually performed via range checks or bit decomposition on $T_"curr" - t_"prev"$). The *Multiset Equality* is the difficult part, which we solve efficiently using probabilistic techniques (Grand Product Argument).
-
-=== Proof of Consistency <sec:mem-proof>
-
-We must prove that if $Init union W equiv R union Audit$, the memory has been
-untampered with. That is, every Read operation retrieved the value from the
-immediately preceding Write operation to that address.
-
-#proof[
-  Let $S_"in" = "Init" union W$ and $S_"out" = R union "Audit"$.
-  Assume the multiset equality holds: $S_"in" equiv S_"out"$.
-
-  We can conceptually reorder the multisets. Since the tuples contain the address $a$, let us partition the multisets by address. For the equality to hold globally, it must hold for each address sub-multiset:
-  $ forall a: S_"in"|_a equiv S_"out"|_a $
-
-  Consider a specific address $a$. Let the elements of $S_"in"|_a$ be sorted strictly by their timestamp $t$. Since $W$ is constructed by a sequential execution with a global clock, all timestamps in $W$ are unique. $Init$ provides the timestamp $0$. Thus, $S_"in"|_a$ forms a strictly increasing sequence of writes to address $a$:
-  $ w_0, w_1, w_2, ..., w_k $
-  Where $w_0 in "Init"$, and $w_1...w_k in W$.
-
-  Since $S_"in"|_a equiv S_"out"|_a$, the set $S_"out"|_a$ must contain the exact same tuples.
-  
-  In the execution model, an element is added to $R$ (part of $S_"out"$) *only* when we perform an operation at address $a$. Specifically, if operation $op_j$ accesses $a$, it reads a tuple $(a, v, t)$ from memory and adds it to $R$.
-
-  Let us inductively match the writes to the reads.
-  1.  $w_0$ (from $Init$) enters memory at $t=0$.
-  2.  Because $S_"out"|_a$ is a permutation of $S_"in"|_a$, $w_0$ must appear in $S_"out"$.
-  3.  $w_0$ can effectively only leave memory when the *next* operation on address $a$ occurs (or during Audit). Let the first operation on $a$ occur at time $T_1$. It reads the current state.
-  4.  If the Prover was honest, it reads $w_0$. If the Prover tries to return a fake tuple $w'$, then $w'$ must exist in $S_"in"$. However, since timestamps are unique and strictly increasing, the Prover cannot return a "future" write $w_2$ because its timestamp would be greater than the current clock $T_1$ (violating the Temporal Ordering check). The Prover cannot return a "past" write that doesn't exist.
-  
-  Therefore, the read at step $i$ must consume the tuple produced by the write at step $i-1$. The multiset equality enforces that no tuples are created out of thin air and no tuples are dropped. The "Audit" set ensures that the final write $w_k$ is accounted for, closing the loop.
-
-  Thus, the value read at any point must be the value written by the most recent preceding write.
-]
+This is what the untrusted RAM stores controlled by $prover$, $verifier$ can
+then use the following algorithms to modify this untrusted ram by performing
+reads or writes:
 
 #figure(
-  align(center)[
-    #set text(10pt)
-    #let w = 2.5em
-    #let h = 3em
-    #diagram(
-      node-stroke: 1pt,
-      spacing: (2em, 2em),
-      {
-        let (n_init, n_w1, n_w2, n_audit) = ((0,0), (2,0), (4,0), (6,0))
-        let (n_r1, n_r2, n_r3) = ((1, 1), (3, 1), (5, 1))
+  caption: [Verifier procedure for reading and writing to the untrusted RAM.],
+  [
+  #algo(
+    title: "Read",
+    parameters: ("a",),
+    fill: theme.bg0.lighten(30%),
+    block-align: left,
+    strong-keywords: false,
+    indent-guides: 1pt + theme.fg4,
+  )[
+    #let arrow_len = context $#h(measure($prover --> verifier$).width - measure($verifier$).width)$
+    $prover --> verifier$: The verifier receives value $v_"read"$ and timestamp $t$ from the prover.\
+    $#arrow_len verifier$: The verifier adds the tuple $(a, v_"read", t)$ to its local set $RS$.\
+    $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
+    $#arrow_len verifier$: The verifier adds the new tuple $(a, v_"read", ts_("new"))$ to its local set $WS$.\
+    $verifier --> prover$: The verifier sends $(a, v_"read", ts_("new"))$ back to the prover.\
+  ]
 
-        // Timeline nodes
-        node(n_init, [$(v_0, 0)$], shape: rect, fill: rgb("#e1f5fe"))
-        node(n_w1, [$(v_1, 5)$], shape: rect, fill: rgb("#e1f5fe"))
-        node(n_w2, [$(v_2, 9)$], shape: rect, fill: rgb("#e1f5fe"))
-        
-        // Operation / Read nodes
-        node(n_r1, [$op_5 \ R: (v_0, 0)$], shape: rect, stroke: (dash: "dashed"))
-        node(n_r2, [$op_9 \ R: (v_1, 5)$], shape: rect, stroke: (dash: "dashed"))
-        node(n_audit, [$Audit: (v_2, 9)$], shape: rect, stroke: (dash: "dashed"))
+  #algo(
+    title: "Write",
+    parameters: ("a, v",),
+    fill: theme.bg0.lighten(30%),
+    block-align: left,
+    strong-keywords: false,
+    indent-guides: 1pt + theme.fg4,
+  )[
+    #let arrow_len = context $#h(measure($prover --> verifier$).width - measure($verifier$).width)$
+    $prover --> verifier$: The verifier receives value $v_("read")$ and timestamp $t$ from the prover.\
+    $#arrow_len verifier$: The verifier adds the tuple $(a, v_("read"), t)$ to its local read set $RS$.\
+    $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
+    $#arrow_len verifier$: The verifier adds the new tuple $(a, v, ts_("new"))$ to its local write set $WS$.\
+    $verifier --> prover$: The verifier sends $(a, v, ts_("new"))$ back to the prover.\
+  ]
+])<fig:omc-verifier-procedure>
 
-        // Edges representing lifecycle
-        edge(n_init, n_r1, "->", label: "Read consumes Write")
-        edge(n_r1, n_w1, "..>", label: "Op produces Write")
-        edge(n_w1, n_r2, "->")
-        edge(n_r2, n_w2, "..>")
-        edge(n_w2, n_audit, "->")
-      }
-    )
-  ],
-  caption: [The lifecycle of a single memory address. Solid boxes represent $S_"in"$ ($Init union W$), dashed boxes represent $S_"out"$ ($R union Audit$). If the multisets are identical, every arrow connects a valid Write to a valid Read.],
-) <fig:mem-lifecycle>
+Here, $verifier$ keeps locally stores, and modifies, the sets $WS, RS$. We
+also denote the sets $Init, Audit$ which represents the initial writes and a
+final read pass respectively, giving $verifier$ the following sets:
 
-== Connecting to Grand Products
+$
+  &Init  &&= { (a, v_"initial", 0) }        &&#h(1em) "Represents the initial write of all values to the RAM." \
+  &RS    &&= { (a, v_"read", t) }           &&#h(1em) "The Read Set; the tuples taken from RAM." \
+  &WS    &&= { (a, v, ts_("new")) }         &&#h(1em) "The Write Set; the tuples put back into RAM." \
+  &Audit &&= { (a, v_"final", t_"final") }  &&#h(1em) "A read pass on the final state of the RAM."
+$
 
-To verify the multiset equality condition $Init union W equiv R union Audit$ efficiently, we treat the tuples as field elements.
+After performing the desired numbers of reads and writes, $verifier$ can
+perform the following multiset equality check:
 
-// We can map a tuple $\tau = (a, v, t)$ to a single field element using random linear combination (RLC). The Verifier samples random weights $\rho_1, \rho_2, \rho_3 \in \mathbb{F}$ and defines:
-// $ \text{compress}(\tau) = a \cdot \rho_1 + v \cdot \rho_2 + t \cdot \rho_3 $
+$ Init union WS meq RS union Audit $<eq:omc-set-check>
 
-// By the Schwartz-Zippel lemma, if two multisets of tuples are distinct, their multisets of compressed values will also be distinct with high probability.
+One way to view @eq:omc-set-check is as a coin-mint. Where each entry is a
+"coin" and each time $verifier$ adds a tuple to $WS$ a coin is "minted"
+and each time $verifier$ adds a tuple to $RS$ a coin is "spent".
 
-// We then verify multiset equality by checking the equality of their characteristic polynomials, or more simply, by checking the Grand Product of the terms:
-// $ \prod_{\tau \in Init \cup W} (X - \text{compress}(\tau)) = \prod_{\tau \in R \cup Audit} (X - \text{compress}(\tau)) $
+#align(center)[
+  #table(
+    columns: 2,
+    rows: 2,
+    align: left,
+    [$WS$: Minted coins throughout],
+    [$RS$: Spent coins],
+    [$Audit$: Unspent coins],
+    [$Init$: Initially minted coins],
+  )
+]
 
-// By binding $X$ to a random challenge $\gamma$, this reduces to proving:
-// $ \frac{\prod_{\tau \in Init \cup W} (\gamma - \text{compress}(\tau))}{\prod_{\tau \in R \cup Audit} (\gamma - \text{compress}(\tau))} = 1 $
+By this logic, @eq:omc-set-check checks that, in total, each coin spent
+(memory read) is exactly equal to each coin minted (memory written):
 
-This specific check can be proven in $O(M)$ time using the specialized GKR protocol (or similar Grand Product arguments) described in @sec:specialized-gkr. This provides us with a Linear Prover and sublinear Verifier for arbitrary RAM correctness.
+$ "Coins Spent" + "Coins Unspent" = "Coins Minted" $
 
-== Implications for Lasso and Jolt
+And intuitively fake coins would not have a corresponding member in the
+"Coins Minted" set. More formally, we state that following the protocol in
+@eq:omc-set-check ensures _read-consistency_ with probability one.
 
-This offline memory checking technique is the primitive underlying **lookup arguments**. In the context of Lasso:
-- The "Memory" is a Read-Only Table (where $Init$ contains the table values).
-- The "Operations" are the Lookups into that table.
-// - Since the table is Read-Only, $v_{new}$ is always equal to $v_{old}$, and the timestamp logic simplifies or is handled via counts.
+#definition(title: "Read Consistency")[
+  Any value read from the RAM will always be the most recently written value.
+]
 
-By proving that the multiset of Lookups is contained in the multiset of the Table (plus appropriate counts), we achieve the core mechanism of modern efficient SNARKs.
+#lemma[
+  A verifier interacting with a potentially malicious prover that manages
+  the RAM by leveraging the protocol above will have read-consistency with
+  probability one.
+]
+
+#proof[
+  Assume that for some read, $prover$ was able to convince $verifier$ that
+  a wrong value was correctly read, i.e. the value at address $a$, was $v'$
+  when it was actually $v$.
+
+  There are only two cases in which the prover could cheat. They can either
+  fabricate fake values that were never in the RAM to begin with, or they
+  can try to convince the verifier a current value is a previous (but at
+  the time, valid) value. These are the only two cases as we assume that
+  as for any value, it must either have never been in the RAM (fake value)
+  or it was previously valid.
+
+  *Fake value case:* $prover$ sends $(v_"fake", t)$ in step one of
+  the Read protocol. The verifier then adds $(a, v_"fake", t)$ to the $RS$
+  set. But this value was never written to the set $WS$, so when the verifier
+  makes the check in @eq:omc-set-check will fail with probability one.
+
+  *Previously valid value case:* $prover$ sends $(v_"old", t_"old")$
+  in step one of the Read protocol. The verifier then adds $(a, v_"old",
+  t_"old")$ to the $RS$ set. This means that $RS$ has two entries of $(a,
+  v_"old", t_"old")$, but since timestamps are always increasing, $WS$ will
+  only have a single entry. Thus when the verifier makes the check in
+  @eq:omc-set-check will fail with probability one.
+]
+
+The sets $WS, RS$ quickly grow to be potentially bigger than the size of
+the RAM, which might make you wonder why this approach is viable at all. The
+answer is that we can store these sets as a digest instead. Each time we add
+to each set we append the element to the running hash and in the end of the
+protocol we compare the digests rather than the multi-sets.
+
+== Spark
+
+In Spark, we apply the offline memory-checking primitive in an alternative
+way. Here, the prover itself is the one that reads a public read-only RAM,
+and the prover wishes to convince the verifier that these reads were performed
+correctly. Specifically, the algorithms in @fig:omc-verifier-procedure are
+run by a trusted party and the resulting data is committed. Then the prover
+wishes to prove to a verifier that @eq:omc-set-check passes.
+
+To do this, we must first be able to prove the equality of multisets as
+an argument. Furthermore, upon further inspection, you might notice that
+each entry in the multisets are tuples, so we also need an argument for
+proving tuple equality. The two lemmas below handle each of these cases:
+
+#theorem[
+  If a prover holds two n-length tuples and wishes to prove that they're equal:
+
+  $
+    vec(a) &= ( a_1, dots, a_n ) \
+    vec(b) &= ( b_1, dots, b_n ) \
+  $
+
+  That is $forall i in [1..n] : f_i = g_i$, the prover can try to convince the verifier that:
+
+  $
+    sum^n_(i=1) alpha^(i-1) dot a_i meq sum^n_(i=1) alpha^(i-1) dot b_i
+  $<eq:tuple-equality>
+
+  For a uniformly random $alpha$ and with soundness bound $frac(style:
+  "horizontal",  n, |Fb|)$ and completeness of one.
+]<thm:tuple-equality-proof>
+
+#proof[
+  Completeness is trivial, as for soundness notice that each side in
+  @eq:tuple-equality is a univariate polynomial evaluated at $alpha$ and with
+  coefficients of $vec(a), vec(b)$ respectively. If the polynomials are
+  equal, then the coefficients, which represent each element in the list,
+  are equal. By Schwarz-Zippel, the probability of the check passing, given
+  that the claim does not hold is $frac(style: "horizontal",  n, |Fb|)$.
+]
+
+
+#theorem[
+  If a prover holds two multisets and wishes to prove that they're equal:
+
+  $
+    F &= { a_1, dots, a_n } \
+    G &= { b_1, dots, b_n } \
+  $
+
+  That is that there exists some permutation, $pi$, s.t. $forall i in [1..n]
+  : F_i = G_(pi(i))$. Let $tilde(f), tilde(g)$ be the multilinear extensions
+  of $F, G$ respectively. The prover can try to convince the verifier that:
+
+  $
+    product_(vec(b) in bits^n) tilde(f)(vec(b)) - beta &meq product_(vec(b) in bits^n) tilde(g)(vec(b)) - beta
+  $
+
+  For a uniformly random $beta$ and with soundness bound $frac(style:
+  "horizontal",  n, |Fb|)$ and completeness of one.
+]<thm:multiset-equality-proof>
+
+#proof[
+  Completeness is trivial. As for soundness. We can interpret each side of
+  the equality as a polynomial variable in $beta$:
+
+  $
+    p(X) &= product_(vec(b) in bits^n) tilde(f)(vec(b)) - X \
+    q(X) &= product_(vec(b) in bits^n) tilde(g)(vec(b)) - X \
+  $
+
+  Then by Schwarz-Zippel, if we consider $e(X) = p(X) - q(X)$ then $e(beta)
+  = 0$ implies that $p = q$ with probability $frac(style:"horizontal", n,
+  |Fb|)$. Now, we just need to prove that $p = q ==> { a_1, dots,
+  a_n } = { b_1, dots, b_n }$.
+
+  Consider the roots of $p$ and $q$, starting with $p$:
+
+  $ p(X) = product_((b_1, dots, b_n) in bits) tilde(f)(b_1, dots, b_n) - X $
+
+  This polynomial evaluates to zero only if one of the factors equals
+  $tilde(f)(vec(b))$, so the roots are:
+
+  $
+    "roots"(p) &= { &&tilde(f)(0, ..., 0), &&tilde(f)(0, ..., 1), &&#h(1em)dots,#h(1em) &&tilde(f)(1, ..., 1) &&} \
+               &= { &&a_1,                 &&a_2,                 &&#h(1em)dots,#h(1em) &&a_n                 &&}, \
+    "roots"(q) &= { &&tilde(g)(0, ..., 0), &&tilde(g)(0, ..., 1), &&#h(1em)dots,#h(1em) &&tilde(g)(1, ..., 1) &&} \
+               &= { &&b_1,                 &&b_2,                 &&#h(1em)dots,#h(1em) &&b_n                 &&}
+  $
+
+  Since the two polynomials are equal, they must have the same roots. Thus:
+
+  $
+    "roots"(p) &= "roots"(q) ==> \
+    { a_1, dots, a_n } &= { b_1, dots, b_n }
+  $
+]
+
+Combining @thm:tuple-equality-proof and @thm:multiset-equality-proof a prover can prove that:
+
+$ Init union WS meq RS union Audit $
+
+With the verifier checking whether all the elements of the read set and all
+the elements of the write set, are equal to some claimed value $h$:
+
+$ h meq product_((a, v, t) in RS union Audit) a + alpha v + alpha^2 t meq product_((a,v,t) in Init union WS) a + alpha v + alpha^2 t $
+
+Which is an excellent use-case for the specialized GKR protocol in
+@sec:specialized-gkr.
+
+== Introducing Cryptographic Assumptions
+
+You may reasonably ask how the prover additionally proves that these sets were
+generated from running the algorithms outlined in @fig:omc-verifier-procedure,
+but it can for now simply be assumed that a trusted party ran and obtained
+these values honestly. More concretely, we can introduce a _commitment scheme_.
+
+== Spark
+
+In our case, the prover 
+
+= R1CS
+
+A popular alternative to GKR's layered circuit representation is R1CS. This
+proof system represents computation of an arithmetic circuit as a system of
+linear constraints combined with a single multiplication per constraint:
+
+$ vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) $
+
+Where $vec(w) in Fb^n$ is the witness vector containing all inputs, outputs,
+and intermediate variables of the circuit and $vec(A), vec(B), vec(C) in
+Fb^(m times n)$ are sparse matrices encoding the structure of the circuit.
+
+Unlike GKR, which requires the circuit to be organized into layers of uniform
+depth, R1CS allows for "flat" structures where any variable can interact
+with any other. This has led to R1CS becoming a sort of _lingua franca_
+for SNARK circuits the last decade or so.
+
+#example(title: "A Small R1CS Circuit")[
+  Consider the following example circuit, which computes $y_1 = (w_1 + w_2)
+  dot w_3$:
+
+  #align(center, [
+    #diagram(debug: 0, node-stroke: 1pt, {
+      // Layer 1
+      let w1 = (0, 0)
+      let w2 = (0, 1)
+      let w3 = (0, 2)
+      node(shape: rect, w1, [$w_1$])
+      node(shape: rect, w2, [$w_2$])
+      node(shape: rect, w3, [$w_3$])
+
+      // Layer 2
+      let add = (1, 0.5)
+      node(shape: circle, add, $+$)
+      edge(w1, (add.at(0), w1.at(1)), add, "->")
+      edge(w2, (add.at(0), w2.at(1)), add, "->")
+
+      // Layer 3
+      let w1_plus_w2 = (2, 0.5)
+      node(stroke: 0em, w1_plus_w2, $w_1 + w_2$)
+      edge(add, w1_plus_w2, "-")
+
+      // Layer 4
+      let mult = (3, 1.25)
+      node(shape: circle, mult, $times$)
+      edge(w3, (mult.at(0), w3.at(1)), mult, "->")
+      edge(w1_plus_w2, (mult.at(0), w1_plus_w2.at(1)), mult, "->")
+
+      // Layer 5
+      let res = (4, 1.25)
+      node(stroke: 0em, res, $(w_1 + w_2) dot w_3$)
+      edge(mult, res, "-")
+
+      // Layer 6
+      let out = (5, 1.25)
+      node(shape: rect, out, $y_1$)
+      edge(res, out, "->")
+    })
+  ])
+
+  First, we define the witness vector $w$. It contains the constant $1$,
+  the input variables, and the output variable:
+
+  $ vec(w) = mat(1, w_1, w_2, w_3, y_1)^top $
+
+  The constant one, is so that we may model constants in the circuit. Since
+  there is only one multiplication gate in our example, the matrices will
+  have only a single row.
+
+  - *Matrix $vec(A)$ (Left Input):* Selects $w_1, w_2$. Note, addition does
+    not grow the dimension of the matrices.
+  - *Matrix $vec(B)$ (Right Input):* Selects $w_3$.
+  - *Matrix $vec(C)$ (Output):* Selects $y_1$.
+
+  $
+    vec(A) = mat(0, 1, 1, 0, 0), quad
+    vec(B) = mat(0, 0, 0, 1, 0), quad
+    vec(C) = mat(0, 0, 0, 0, 1)
+  $
+
+  $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $
+
+  To verify, we take the dot product of the row with the witness:
+
+  $
+
+  vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) ==> \ 
+  underbrace( (0 + 0 + 0 + 0 + 1 dot y_1), "Output: " y_1 )
+  &=
+  underbrace( (0 dot 1 + 1 dot w_1 + 1 dot w_2 + 0 + 0), "Left Input: " (w_1 + w_2) )
+  dot
+  underbrace( (0 + 0 + 0 + 1 dot w_3 + 0), "Right Input: " w_3 ) ==> \
+  y_1 &= w_1 + w_2 dot w_3
+  $
+
+  So to check whether the circuit is satisfied, the verifier can boil the
+  check down to just $vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w)$.
+]
+
+== From Matrices to Polynomials (QAP)
+
+We can model $vec(M) in { vec(A), vec(B), vec(C) }$ with its multilinear extension:
+
+$ tilde(M)(vec(x), vec(y)) = sum_(vec(a) in bits^m) sum_(vec(b) in bits^n) M_(a, b) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) $

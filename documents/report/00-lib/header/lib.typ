@@ -54,4 +54,6 @@
 #let Fb = math.bb("F")
 #let inrand = $attach(in, br: R)$
 #let vec(body) = $bold(body)$
+#let innerprod(A, B) = $chevron.l #A, #B chevron.r$
+#let hadamard = $dot.o$
 

@@ -12,6 +12,7 @@
       theorion_0_4_1
       oxifmt_0_2_1 # Nixpkgs support for typst is sort of janky
       diatypst_0_8_0
+      algo_0_3_6
       polylux_0_4_0
       metropolis-polylux_0_1_0
     ];
