@@ -126,9 +126,14 @@ Since the R1CS instance will only be satisfied if and only if
 
 $ forall vec(x) in bits^s : F(vec(x)) = 0 $<eq:r1cs-F-equals-zero>
 
-#todo-box[
-  Why?
-]
+To see why, recall that $F(vec(x))$ computes the difference between the
+left-hand and right-hand sides of the R1CS constraint at row $"toInt"(vec(x))$:
+
+$ F(vec(x)) = (vec(A) vec(w))_("toInt"(vec(x))) dot (vec(B) vec(w))_("toInt"(vec(x))) - (vec(C) vec(w))_("toInt"(vec(x))) $
+
+So $F(vec(x)) = 0$ for all $vec(x) in bits^s$ simply asserts that every row
+of @eq:r1cs-claim holds, i.e. $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B)
+vec(w)$.
 
 We can of course also define the multilinear extensions of $A, B, C : Bool^s times Bool^s -> Bool, w : Bool^s -> Bool$ and model $F$ as a polynomial:
 
@@ -155,9 +160,11 @@ evaluate to zero outside the domain. From here we can evaluate this polynomial
 at a random point, and by Schwartz-Zippel, if it evaluates to zero, the
 claim will hold.
 
-#todo-box[
-  With what probibility?
-]
+Schwartz-Zippel applies here since if $q$ is multilinear in $s$ variables,
+its total degree is $s$. By the Schwartz-Zippel Lemma, if $q$ is a non-zero
+polynomial, the probability it evaluates to zero at a uniformly random point
+$vec(gamma) inrand Fb^s$ is at most $frac(style: "skewed", s, |Fb|)$, which
+is negligible in the size of the field.
 
 == Our Old Friend Sumcheck
 
@@ -239,10 +246,32 @@ $
                                                                 &meq sum_(vec(b) in Bool^s) ( tilde(A)(vec(zeta), vec(b)) + alpha dot tilde(B)(vec(zeta), vec(b)) + alpha^2 dot tilde(C)(vec(zeta), vec(b))) dot tilde(w)(vec(b))
 $<eq:spartan-sumcheck-two-raw>
 
-#todo-box[
-  Create the theorem here that we can reduce three claims (three polynomials
-  evaluated at the same point) to a single one. Ala the previous theorem
-  for two evaluations of the same polynomial at two different points.
+#lemma(title: "Multiple Polynomials Evaluated at the Same Point")[
+  For polynomials $p_1, p_2, ..., p_k$, each of $ell$ variables, if a prover
+  wants to convince a verifier of $k$ claims $v_1 = p_1(vec(r)), v_2 =
+  p_2(vec(r)), ..., v_k = p_(k)(vec(r))$ (all evaluated at the same point
+  $vec(r)$), then they can reduce this to a single claim over a polynomial:
+
+  $
+    q(vec(x)) := p_1(vec(x)) + alpha dot p_2(vec(x)) + alpha^2 dot p_3(vec(x)) + dots.c + alpha^(k-1) dot p_(k)(vec(x))
+  $
+
+  $verifier$ can then check that $q(vec(r)) = v_1 + alpha dot v_2 + alpha^2
+  dot v_3 + dots.c + alpha^(k-1) dot v_k$. The claim that $v_i = p_i(vec(r))$
+  for all $i$ will then hold except with negligible probability of $frac(k -
+  1, |Fb|)$, given that $q$ is defined as above.
+] <lem:multiple-polys-same-point>
+#proof[
+  #set math.equation(numbering: none)
+  If $q(vec(r)) = v_1 + alpha dot v_2 + dots.c + alpha^(k-1) dot v_k$ but the
+  claim does not hold for some $i$, i.e. $v_i != p_i(vec(r))$, then the
+  following univariate polynomial in $alpha$ is nonzero:
+
+  $ e(X) = (v_1 + X dot v_2 + dots.c + X^(k-1) dot v_k) - (p_1(vec(r)) + X dot p_2(vec(r)) + dots.c + X^(k-1) dot p_k(vec(r))) $
+
+  Since $e(X)$ has degree at most $k - 1$, by the Schwartz-Zippel Lemma:
+
+  $ Pr[e(alpha) = 0 | e(X) != 0] <= frac(k - 1, |Fb|) $
 ]
 
 Applying sumcheck to @eq:spartan-sumcheck-two-raw yields our second sumcheck

@@ -1,3 +1,9 @@
 # Document Review: "Roping in Lasso"
 
-Items from chapters 1-4 have had a pass-through. Sections 5-6 are still WIP.
+Reviews Done:
+- Chapter 1: 1
+- Chapter 2: 1
+- Chapter 3: 1
+- Chapter 4: 1
+- Chapter 5: 0
+- Chapter 6: 0
