@@ -213,7 +213,7 @@ evaluate $f_(i)$ in round $j$ of the sumcheck protocol. Crucially, we
 need to construct the tables required to evaluate $f_(i)$ in round $j$
 of the sumcheck protocol in $O(2^(i-j))$ time.
 
-=== Computing $tilde("eq")$ in linear time
+=== Computing $tilde("eq")$ in linear time<sec:computing-eq-linear>
 
 For round $i$ of the GKR protocol, in round $j$ in the sumcheck invocation,
 we want to evaluate $f_(i)$ at $vec(x) = ( r_1, ..., r_j, t,
@@ -263,7 +263,7 @@ $ hat("eq")_(j)[(b_(j+1), ..., b_(ell))] = ( product^(j)_(k=1) (v_k r_k + (1 - v
 
 As expected. This process works for both $tilde("eq")_((vec(r)_(i-1) || 0))$ and $tilde("eq")_((vec(r)_(i-1) || 1))$.
 
-=== Computing $tilde(W)$ in linear time
+=== Computing $tilde(W)$ in linear time <sec:computing-w-linear>
 
 *Constructing the lookup table:*
 

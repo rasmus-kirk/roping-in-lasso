@@ -20,5 +20,6 @@ sublinear
 sumcheck
 sumchecks
 univariate
+whp
 zkVM
 zkVMs

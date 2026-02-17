@@ -21,12 +21,9 @@
 
 = Project Contract
 
-$ x = 2 $
-$ x = 2 $<eq:lol>
-
 == Project Title
 
-*Understanding Lasso Through Offline Memory Checking, Spartan, and Spark*
+*Roping in Lasso*
 
 == Overall Goal
 
@@ -98,6 +95,7 @@ and examiners.
     - Spartan,
     - Spark,
     - Lasso.
+
 - *Synthesis & Explanation*
   - Extract the core ideas and abstractions.
   - Organize findings into a coherent narrative.

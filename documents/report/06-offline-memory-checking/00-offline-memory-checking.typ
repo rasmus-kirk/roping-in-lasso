@@ -9,9 +9,23 @@
 #let TODO = text(weight: "bold", size: 1.2em,  "TODO")
 #let ts = $t s$
 
-= Offline Memory-Checking
+= Spark
 
-In offline-memory checking the goal is for a potentially malicious prover
+In this section we'll introduce Spark, the sparse polynomial commitment
+scheme. This scheme can be applied directly to conclusion from the previous
+to achieve an R1CS prover which takes linear time in the number of nonzero
+entries of the R1CS matrices. Before delving directly into Spark, we'll
+first introduce the concept of _offline memory checking_, which lies at the
+heart of Spark.
+
+Offline memory checking also serves as the backbone of Jolt, since when
+we need to model instruction sets, we also need to handle reads and writes
+to registers. This document will not cover Jolt, but understanding Jolt
+mostly boils down to understanding Lasso and offline memory checking.
+
+== Offline Memory Checking
+
+In offline memory checking the goal is for a potentially malicious prover
 ($prover$) to control a RAM for the verifier to access. The verifier
 ($verifier$) can read and write to this RAM and verify that each read
 accesses the last write performed on that address. We can model a RAM as
@@ -192,7 +206,6 @@ proving tuple equality. The two lemmas below handle each of these cases:
   are equal. By Schwarz-Zippel, the probability of the check passing, given
   that the claim does not hold is $frac(style: "horizontal",  n, |Fb|)$.
 ]
-
 
 #theorem[
   If a prover holds two multisets and wishes to prove that they're equal:
