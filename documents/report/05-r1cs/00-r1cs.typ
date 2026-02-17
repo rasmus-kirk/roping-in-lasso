@@ -8,7 +8,7 @@ A popular alternative to GKR's layered circuit representation is R1CS. This
 proof system represents computation of an arithmetic circuit as a system of
 linear constraints combined with a single multiplication per constraint:
 
-$ vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) $<eq:r1cs-claim>
+$ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $<eq:r1cs-claim>
 
 Where $vec(w) in Fb^N$ is the witness vector containing all inputs, outputs,
 and intermediate variables of the circuit and $vec(A), vec(B), vec(C) in
@@ -67,7 +67,7 @@ for SNARK circuits the last decade or so.
 
   $ vec(w) = mat(1, w_1, w_2, w_3, y_1)^top $
 
-  The constant one, is so that we may model constants in the circuit. Since
+  The constant one exists so that we can model constants in the circuit. Since
   there is only one multiplication gate in our example, the matrices will
   have only a single row.
 
@@ -82,34 +82,33 @@ for SNARK circuits the last decade or so.
     vec(C) = mat(0, 0, 0, 0, 1)
   $
 
-  $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $
-
   To verify, we take the dot product of the row with the witness:
 
   $
-
   vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w) ==> \ 
   underbrace( (0 + 0 + 0 + 0 + 1 dot y_1), "Output: " y_1 )
   &=
   underbrace( (0 dot 1 + 1 dot w_1 + 1 dot w_2 + 0 + 0), "Left Input: " (w_1 + w_2) )
   dot
   underbrace( (0 + 0 + 0 + 1 dot w_3 + 0), "Right Input: " w_3 ) ==> \
-  y_1 &= w_1 + w_2 dot w_3
+  y_1 &= (w_1 + w_2) dot w_3
   $
 
   So to check whether the circuit is satisfied, the verifier can boil the
-  check down to just $vec(C) vec(w) &= vec(A) vec(w) hadamard vec(B) vec(w)$.
+  check down to just $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B) vec(w)$.
 ]
 
 == From Matrices to Polynomials (QAP)
 
 Without loss of generality, we simplify the domain of $vec(A), vec(B), vec(C)$
-to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. To avoid
+to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let
+$n$ denote the total number of nonzero entries across the matrices $vec(A),
+vec(B), vec(C)$. To avoid
 writing everything thrice we denote $vec(M) in {vec(A), vec(B), vec(C) }$. We
 also define $"toBits"(x) : nats -> bits^(ceil(lg(x)))$ and $"toInt"(vec(x))
 : bits^(|vec(x)|) -> nats$ representing the isomorphic functions between
 the natural numbers and their corresponding bitstrings. We can naturally
-express $vec(M), vec(w)$ as a functions:
+express $vec(M), vec(w)$ as functions:
 
 $
   forall vec(x),vec(y) in bits^s &: M(vec(x), vec(y)) &&= M_("toInt"(vec(x)),"toInt"(vec(y))) \
@@ -117,12 +116,12 @@ $
 $
 
 
-We now define a helpful function $F : Bool^s -> Bool$ which can model whether
+We now define a helpful function $F : bits^s -> Fb$ which can model whether
 an R1CS instance is satisfied:
 
 $ F(vec(x)) = (sum_(vec(b) in bits^s) A(vec(x), vec(b)) dot w(vec(b))) dot (sum_(vec(b) in bits^s) B(vec(x), vec(b)) dot w(vec(b))) - sum_(vec(b) in bits^s) C(vec(x), vec(b)) dot w(vec(b)) $
 
-Since the R1CS instance will only be satisfied if and only if
+The R1CS instance is satisfied if and only if
 
 $ forall vec(x) in bits^s : F(vec(x)) = 0 $<eq:r1cs-F-equals-zero>
 
@@ -135,36 +134,36 @@ So $F(vec(x)) = 0$ for all $vec(x) in bits^s$ simply asserts that every row
 of @eq:r1cs-claim holds, i.e. $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B)
 vec(w)$.
 
-We can of course also define the multilinear extensions of $A, B, C : Bool^s times Bool^s -> Bool, w : Bool^s -> Bool$ and model $F$ as a polynomial:
+We can of course also define the multilinear extensions of $A, B, C : bits^s times bits^s -> Fb, w : bits^s -> Fb$ and model $F$ as a polynomial:
 
 $
-  tilde(M)(vec(x), vec(y)) &= sum_(vec(a) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) \
+  tilde(M)(vec(x), vec(y)) &= sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) \
   tilde(w)(vec(x))         &= sum_(vec(b) in bits^s) w(vec(b)) dot tilde("eq")(vec(x), vec(b)) \
-  f(vec(x))                &= (sum_(vec(b) in bits^n) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b))) dot (sum_(vec(b) in bits^n) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))) - sum_(vec(b) in bits^n) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))
+  f(vec(x))                &= (sum_(vec(b) in bits^s) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b))) dot (sum_(vec(b) in bits^s) tilde(B)(vec(x), vec(b)) dot tilde(w)(vec(b))) - sum_(vec(b) in bits^s) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))
 $
 
 Now, it may be tempting to simply run sumcheck over this polynomial to make
 sure the sum equals zero:
 
-$ 0 meq sum_(vec(b) in bits) f(vec(b)) $
+$ 0 meq sum_(vec(b) in bits^s) f(vec(b)) $
 
 But since the terms can cancel out that won't work. Instead, we can once
 again make use of Schwartz-Zippel. Consider the following polynomial:
 
 $ q(vec(x)) = sum_(vec(b) in bits^(s)) tilde("eq")(vec(x), vec(b)) dot f(vec(b)) $
 
-Given @eq:r1cs-F-equals-zero holds then it will obviously be true that $forall
-vec(x) in Bool^s : q(vec(x)) = 0$. Since $tilde("eq")(vec(x), vec(b)) = 1$
-if and only if $vec(x) = vec(b)$, and zero otherwise, then $q$ must also
-evaluate to zero outside the domain. From here we can evaluate this polynomial
-at a random point, and by Schwartz-Zippel, if it evaluates to zero, the
-claim will hold.
+Given @eq:r1cs-F-equals-zero holds then it will obviously be true that
+$forall vec(x) in Bool^s : q(vec(x)) = 0$. Since $tilde("eq")(vec(x), vec(b))
+= 1$ if and only if $vec(x) = vec(b)$, and zero otherwise, then $q$ must
+also evaluate to zero outside the domain. Since $q$ is multilinear in $s$
+variables, its total degree is $s$. By the Schwartz-Zippel Lemma, if $q$ is
+a non-zero polynomial, the probability it evaluates to zero at a uniformly
+random point $vec(gamma) inrand Fb^s$ is at most $frac(style: "skewed", s,
+|Fb|)$, which is negligible in the size of the field.
 
-Schwartz-Zippel applies here since if $q$ is multilinear in $s$ variables,
-its total degree is $s$. By the Schwartz-Zippel Lemma, if $q$ is a non-zero
-polynomial, the probability it evaluates to zero at a uniformly random point
-$vec(gamma) inrand Fb^s$ is at most $frac(style: "skewed", s, |Fb|)$, which
-is negligible in the size of the field.
+Meaning we simply evaluate this polynomial at a random point, and by
+Schwartz-Zippel, if it evaluates to zero, the claim (i.e. @eq:r1cs-claim)
+will hold.
 
 == Our Old Friend Sumcheck
 
@@ -210,14 +209,14 @@ also have a linear-time prover.
 ]
 #proof[
   Compute $vec(t) = vec(M) vec(w)$ and as usual denote $forall vec(b) in Bool^s
-  : t(vec(b)) = t_"toBits"(vec(b))$. Now, note that for all entries of each
+  : t(vec(b)) = t_"toInt"(vec(b))$. Now, note that for all entries of each
   $macron(M) in { macron(A), macron(B), macron(C) }$:
 
   $ forall vec(b) in Bool^s : macron(M)(vec(b)) = t(vec(b)) $<eq:equality-between-macron-M-and-t>
 
   This means the prover can compute $vec(t)$ in time $O(n)$ and then:
 
-  $ tilde(t)(vec(x)) = sum_(vec(b) in bits^lg(n)) tilde("eq")(vec(x), vec(b)) t(vec(b)) $
+  $ tilde(t)(vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) t(vec(b)) $
 
   Since @eq:equality-between-macron-M-and-t holds, then it must also be true
   that the polynomials $tilde(t)$ and $macron(M)$ are equal, i.e. $tilde(t)
@@ -234,17 +233,20 @@ In the final round, the verifier needs to evaluate $g_1(vec(zeta))
 v_macron(C))$, where the prover sends:
 
 $
-  v_macron(A) = macron(A)(vec(zeta), vec(b)), #h(3em)
-  v_macron(B) = macron(B)(vec(zeta), vec(b)), #h(3em)
-  v_macron(C) = macron(C)(vec(zeta), vec(b)) \
+  v_macron(A) = macron(A)(vec(zeta)), #h(3em)
+  v_macron(B) = macron(B)(vec(zeta)), #h(3em)
+  v_macron(C) = macron(C)(vec(zeta)) \
 $
 
-But the verifier then need to verify that these are defined as in
+But the verifier then needs to verify that these are defined as in
 @eq:macron-polys. This can once again be boiled down to a sumcheck:
+
 $
   v_macron(A) + alpha dot v_macron(B) + alpha^2 dot v_macron(C) &meq sum_(vec(b) in Bool^s) tilde(A)(vec(zeta), vec(b)) dot tilde(w)(vec(b)) + alpha dot tilde(B)(vec(zeta), vec(b)) dot tilde(w)(vec(b)) + alpha^2 dot tilde(C)(vec(zeta), vec(b)) dot tilde(w)(vec(b)) \
                                                                 &meq sum_(vec(b) in Bool^s) ( tilde(A)(vec(zeta), vec(b)) + alpha dot tilde(B)(vec(zeta), vec(b)) + alpha^2 dot tilde(C)(vec(zeta), vec(b))) dot tilde(w)(vec(b))
 $<eq:spartan-sumcheck-two-raw>
+
+By utilizing a Lemma which is quite similar to @lem:multiple-evals-same-poly:
 
 #lemma(title: "Multiple Polynomials Evaluated at the Same Point")[
   For polynomials $p_1, p_2, ..., p_k$, each of $ell$ variables, if a prover
@@ -298,7 +300,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
 
   $
     tilde(M)(vec(zeta), vec(b)) &= sum_(vec(a) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) \
-                                &= sum_((v, c, r) in S_M : "toBits"(c) = vec(b)) "toBits"(v) dot tilde("eq")(vec(zeta), "toBits"(r))
+                                &= sum_((v, c, r) in S_M : "toBits"(c) = vec(b)) v dot tilde("eq")(vec(zeta), "toBits"(r))
   $
 
   Then, using this sparse representation, we can create the lookup table
@@ -314,7 +316,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
     )[
 
     $O(m)$: Initialize an array $vec(t)$ of size $m$ with zeros.\
-    $O(n)$: For each $(v, r, c) in S_M : t_c <- t_c + v dot hat("eq")_vec(zeta)["toBits"(r)]$. \
+    $O(n)$: For each $(v, c, r) in S_M : t_c <- t_c + v dot hat("eq")_vec(zeta)["toBits"(r)]$. \
     The resulting array $vec(t)$ is exactly $hat(M)_vec(zeta)$.\
     ]
   ])
@@ -333,7 +335,7 @@ $
   g_2(vec(gamma)) = (tilde(A)(vec(zeta), vec(gamma)) + alpha dot tilde(B)(vec(zeta), vec(gamma)) + alpha^2 dot tilde(C)(vec(zeta), vec(gamma))) dot tilde(w)(vec(gamma))
 $
 
-For the verifier to evaluate $tilde(A)(vec(zeta), vec(r))$ directly, they would
+For the verifier to evaluate $tilde(A)(vec(zeta), vec(gamma))$ directly, they would
 need to perform at least $O(n)$ work, destroying the succinctness of the verifier.
 To resolve this, we need a mechanism that allows the prover to commit to the
 nonzero entries of the matrices and prove the evaluation of sparse polynomials
