@@ -16,8 +16,10 @@ Fb^(M times N)$ are sparse matrices encoding the structure of the circuit.
 
 Unlike GKR, which requires the circuit to be organized into layers of uniform
 depth, R1CS allows for "flat" structures where any variable can interact
-with any other. This has led to R1CS becoming a sort of _lingua franca_
-for SNARK circuits the last decade or so.
+with any other. This has led to R1CS becoming a sort of _lingua franca_ for
+SNARK circuits the last decade or so. The approach described in this chapter
+specifically follows Spartan@spartan, which encodes R1CS as a multilinear
+polynomial identity and uses sumcheck to verify it.
 
 #example(title: "A Small R1CS Circuit")[
   Consider the following example circuit, which computes $y_1 = (w_1 + w_2)
@@ -98,6 +100,12 @@ for SNARK circuits the last decade or so.
   check down to just $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B) vec(w)$.
 ]
 
+Our goal for the rest of this chapter is to reduce the R1CS
+satisfiability check to polynomial evaluations that can be verified via
+sumcheck. Specifically, we will encode the constraint system as a polynomial
+identity and ultimately use sumcheck to convince the verifier that the
+polynomial identity holds.
+
 == Arithmetizing R1CS
 
 Without loss of generality, we simplify the domain of $vec(A), vec(B), vec(C)$
@@ -114,7 +122,6 @@ $
   forall vec(x),vec(y) in bits^s &: M(vec(x), vec(y)) &&= M_("toInt"(vec(x)),"toInt"(vec(y))) \
   forall vec(x) in bits^s        &: w(vec(x))         &&= w_("toInt"(vec(x)))
 $
-
 
 We now define a helpful function $F : bits^s -> Fb$ which can model whether
 an R1CS instance is satisfied:
@@ -134,7 +141,8 @@ So $F(vec(x)) = 0$ for all $vec(x) in bits^s$ simply asserts that every row
 of @eq:r1cs-claim holds, i.e. $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B)
 vec(w)$.
 
-We can of course also define the multilinear extensions of $A, B, C : bits^s times bits^s -> Fb, w : bits^s -> Fb$ and model $F$ as a polynomial:
+We can of course also define the multilinear extensions of $A, B, C : bits^s
+times bits^s -> Fb, w : bits^s -> Fb$ and model $F$ as a polynomial:
 
 $
   tilde(M)(vec(x), vec(y)) &= sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) \
@@ -142,30 +150,31 @@ $
   f(vec(x))                &= (sum_(vec(b) in bits^s) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b))) dot (sum_(vec(b) in bits^s) tilde(B)(vec(x), vec(b)) dot tilde(w)(vec(b))) - sum_(vec(b) in bits^s) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))
 $
 
-Now, it may be tempting to simply run sumcheck over this polynomial to make
-sure the sum equals zero:
+If the R1CS instance is satisfied, $f(vec(x)) = 0$ for all $vec(x) in
+bits^s$. It might be tempting to apply Schwartz-Zippel directly to $f$ by
+checking if $f(vec(gamma)) = 0$ for a random $vec(gamma) in Fb^s$. However,
+because $f$ multiplies the $tilde(A)$ and $tilde(B)$ sums, it has degree
+2 in each variable of $vec(x)$.  A polynomial can evaluate to zero on the
+entire boolean hypercube without being the identically zero polynomial
+globally. Thus, $f(vec(gamma))$ will likely be nonzero even for valid proofs,
+rejecting a satisfied R1CS instance.
 
-$ 0 meq sum_(vec(b) in bits^s) f(vec(b)) $
+Instead, we need a polynomial that is the zero-polynomial _if and only if_
+the hypercube evaluations are zero. This is yet another useful property of
+multilinear polynomials. A multilinear polynomial is uniquely determined
+by its values on the boolean hypercube, meaning the multilinear extension
+of $f$, denoted $tilde(f)$, is the zero polynomial if and only if the R1CS
+instance is satisfied.
 
-But since the terms can cancel out that won't work. Instead, we can once
-again make use of Schwartz-Zippel. Consider the following polynomial:
+We can then safely use Schwartz-Zippel on $tilde(f)$ by evaluating it at a random
+point.
 
-$ q(vec(x)) = sum_(vec(b) in bits^(s)) tilde("eq")(vec(x), vec(b)) dot f(vec(b)) $
+$ tilde(f)(vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) dot f(vec(b)) $
 
-Given @eq:r1cs-F-equals-zero holds then it will obviously be true that
-$forall vec(x) in Bool^s : q(vec(x)) = 0$. Since $tilde("eq")(vec(x), vec(b))
-= 1$ if and only if $vec(x) = vec(b)$, and zero otherwise, then $q$ must
-also evaluate to zero outside the domain. Since $q$ is multilinear in $s$
-variables, its total degree is $s$. By the Schwartz-Zippel Lemma, if $q$ is
-a non-zero polynomial, the probability it evaluates to zero at a uniformly
-random point $vec(gamma) inrand Fb^s$ is at most $frac(style: "skewed", s,
-|Fb|)$, which is negligible in the size of the field.
+By running the sumcheck protocol, the prover can convince the verifier that
+$tilde(f)(vec(alpha)) = 0$ for a random challenge $vec(alpha)$.
 
-Meaning we simply evaluate this polynomial at a random point, and by
-Schwartz-Zippel, if it evaluates to zero, the claim (i.e. @eq:r1cs-claim)
-will hold.
-
-== Our Old Friend Sumcheck
+== Defining the Sumcheck Polynomials $g_1, g_2$
 
 The above exposition established that if the prover succeeds in convincing
 the verifier that the following equation holds:
@@ -205,27 +214,32 @@ also have a linear-time prover.
 
 #theorem[
   A sumcheck performed on $g_1$ will have a linear-time prover running in
-  time $O(n)$.
+  time $O(n + m)$.
 ]
 #proof[
-  Compute $vec(t) = vec(M) vec(w)$ and as usual denote $forall vec(b) in Bool^s
-  : t(vec(b)) = t_"toInt"(vec(b))$. Now, note that for all entries of each
-  $macron(M) in { macron(A), macron(B), macron(C) }$:
+  For each matrix $vec(M) in { vec(A), vec(B), vec(C) }$, compute the
+  corresponding product $vec(t)_M = vec(M) vec(w)$. Since the matrices are
+  sparse with a total of $n$ nonzero entries across each, computing these three
+  products takes $O(n)$ time via sparse matrix-vector multiplication. As usual
+  denote $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
+  note that for each $macron(M) in { macron(A), macron(B), macron(C) }$:
 
-  $ forall vec(b) in Bool^s : macron(M)(vec(b)) = t(vec(b)) $<eq:equality-between-macron-M-and-t>
+  $ forall vec(b) in Bool^s : macron(M)(vec(b)) = t_M (vec(b)) $<eq:equality-between-macron-M-and-t>
 
-  This means the prover can compute $vec(t)$ in time $O(n)$ and then:
+  This means the prover can build a lookup table for each $macron(M)$ from the
+  corresponding $vec(t)_M$:
 
-  $ tilde(t)(vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) t(vec(b)) $
+  $ tilde(t)_M (vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) t_M (vec(b)) $
 
-  Since @eq:equality-between-macron-M-and-t holds, then it must also be true
-  that the polynomials $tilde(t)$ and $macron(M)$ are equal, i.e. $tilde(t)
-  = macron(M)$. Since we can use $vec(t)$ as a lookup table, we can use
-  techniques similar to the ones applied in @sec:computing-eq-linear
-  and @sec:computing-w-linear, to compute lookup tables for $hat("eq")$
-  and $hat(t)$ in time $O(n)$. This of course mean that we can compute
-  lookup-tables for $macron(A), macron(B), macron(C)$, evaluate $g_1$ in
-  constant time and have a prover runtime of $O(n)$ for the sumcheck.
+  Since @eq:equality-between-macron-M-and-t holds, then it must also be
+  true that the polynomials $tilde(t)_M$ and $macron(M)$ are equal, i.e.
+  $tilde(t)_M = macron(M)$. Since we can use $vec(t)_A, vec(t)_B, vec(t)_C$
+  as lookup tables, we can use techniques similar to the ones applied in
+  @sec:computing-eq-linear and @sec:computing-w-linear, to compute lookup
+  tables for $hat("eq")$ and each $hat(t)_M$ in time $O(m)$ and $O(n)$
+  respectively. This of course means that we can compute lookup tables for
+  $macron(A), macron(B), macron(C)$, evaluate $g_1$ in constant time and
+  have a prover runtime of $O(n + m)$ for the sumcheck.
 ]
 
 In the final round, the verifier needs to evaluate $g_1(vec(zeta))
@@ -283,7 +297,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
 
 #theorem[
   A sumcheck performed on $g_2$ will have a linear-time prover running in
-  time $O(n)$.
+  time $O(n + m)$.
 ]
 #proof[
   To evaluate the sumcheck for $g_2(vec(x))$ efficiently, the prover must construct the
@@ -335,9 +349,17 @@ $
   g_2(vec(gamma)) = (tilde(A)(vec(zeta), vec(gamma)) + alpha dot tilde(B)(vec(zeta), vec(gamma)) + alpha^2 dot tilde(C)(vec(zeta), vec(gamma))) dot tilde(w)(vec(gamma))
 $
 
-For the verifier to evaluate $tilde(M)(vec(zeta), vec(gamma))$ directly, they would
-need to perform at least $O(n)$ work, destroying the succinctness of the verifier.
-To resolve this, we need a mechanism that allows the prover to commit to the
-nonzero entries of the matrices and prove the evaluation of sparse polynomials
-without the verifier iterating over the entries. This mechanism is provided
-by _Spark_.
+Note that the verifier also needs $tilde(w)(vec(gamma))$. The evaluation
+$tilde(w)(vec(gamma))$ can be handled by a polynomial commitment scheme as
+briefly discussed in @sec:pcs.
+
+We reduced R1CS satisfiability to two rounds of sumcheck, both
+with linear-time provers. The first sumcheck reduces the R1CS check to
+evaluations of $macron(A), macron(B), macron(C)$, and the second reduces
+those to evaluations of the sparse matrix polynomials $tilde(A), tilde(B),
+tilde(C)$ and the witness polynomial $tilde(w)$. For the verifier to evaluate
+these directly, they would need to perform at least $O(n)$ work, destroying
+the succinctness of the verifier. To resolve this, we need a mechanism that
+allows the prover to commit to the nonzero entries of the matrices and prove
+the evaluation of sparse polynomials without the verifier iterating over
+the entries. This mechanism is provided by _Spark_.

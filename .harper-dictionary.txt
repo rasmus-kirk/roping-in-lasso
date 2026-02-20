@@ -23,6 +23,7 @@ notational
 polylogarithmic
 polynomially
 prover
+satisfiability
 sublinear
 sumcheck
 sumchecks
