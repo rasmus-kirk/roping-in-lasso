@@ -98,7 +98,7 @@ for SNARK circuits the last decade or so.
   check down to just $vec(C) vec(w) = vec(A) vec(w) hadamard vec(B) vec(w)$.
 ]
 
-== From Matrices to Polynomials (QAP)
+== Arithmetizing R1CS
 
 Without loss of generality, we simplify the domain of $vec(A), vec(B), vec(C)$
 to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let
@@ -335,7 +335,7 @@ $
   g_2(vec(gamma)) = (tilde(A)(vec(zeta), vec(gamma)) + alpha dot tilde(B)(vec(zeta), vec(gamma)) + alpha^2 dot tilde(C)(vec(zeta), vec(gamma))) dot tilde(w)(vec(gamma))
 $
 
-For the verifier to evaluate $tilde(A)(vec(zeta), vec(gamma))$ directly, they would
+For the verifier to evaluate $tilde(M)(vec(zeta), vec(gamma))$ directly, they would
 need to perform at least $O(n)$ work, destroying the succinctness of the verifier.
 To resolve this, we need a mechanism that allows the prover to commit to the
 nonzero entries of the matrices and prove the evaluation of sparse polynomials

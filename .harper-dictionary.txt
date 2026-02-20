@@ -1,8 +1,13 @@
+FRI
 GKR
 GKR's
 Hyrax
 Jakobsen
+KZG
 MLE
+NP
+PCS
+PCSs
 Pedersen
 R1CS
 Rasmus
@@ -10,11 +15,13 @@ Shamir
 Thaler's
 Zippel
 bitstrings
+homomorphic
 lifecycle
 multilinear
 multisets
 notational
 polylogarithmic
+polynomially
 prover
 sublinear
 sumcheck

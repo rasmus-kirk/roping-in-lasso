@@ -11,17 +11,32 @@
 
 = Spark
 
-In this section we'll introduce Spark, the sparse polynomial commitment
-scheme. This scheme can be applied directly to conclusion from the previous
-to achieve an R1CS prover which takes linear time in the number of nonzero
-entries of the R1CS matrices. Before delving directly into Spark, we'll
-first introduce the concept of _offline memory checking_, which lies at the
-heart of Spark.
+We left off last section, with an argument for R1CS based on sumcheck with
+a linear prover. This is indeed Spartan, but we're still missing the core
+contribution of Spartan, _Spark_. Spark solves our last problem, namely that
+the verifier still needs the evaluations of $tilde(A), tilde(B), tilde(C)$
+in the last round of the $g_2$ sumcheck. Of course the verifier could do
+this themselves, but this would take at least $O(n + m)$ time, making the
+verifier linear. Another option is to use a PCS as described in @sec:pcs,
+but any standard scheme would slow down the prover $O(m^2)$ when doing an
+opening proof.
 
-Offline memory checking also serves as the backbone of Jolt, since when
-we need to model instruction sets, we also need to handle reads and writes
-to registers. This document will not cover Jolt, but understanding Jolt
-mostly boils down to understanding Lasso and offline memory checking.
+In Spark the prover only suffers a penalty of $O(n + m)$, meaning we get
+the desired prover time. The main idea is:
+
+$tilde(M)(vec(x), vec(y)) = M(vec(x), vec(y)) $
+
+// In this section we'll introduce Spark, the sparse polynomial commitment
+// scheme. This scheme can be applied directly to conclusion from the previous
+// to achieve an R1CS prover which takes linear time in the number of nonzero
+// entries of the R1CS matrices. Before delving directly into Spark, we'll
+// first introduce the concept of _offline memory checking_, which lies at the
+// heart of Spark.
+
+// Offline memory checking also serves as the backbone of Jolt, since when
+// we need to model instruction sets, we also need to handle reads and writes
+// to registers. This document will not cover Jolt, but understanding Jolt
+// mostly boils down to understanding Lasso and offline memory checking.
 
 == Offline Memory Checking
 
