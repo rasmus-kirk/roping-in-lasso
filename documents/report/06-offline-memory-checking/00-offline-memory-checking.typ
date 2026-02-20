@@ -13,18 +13,27 @@
 
 We left off last section, with an argument for R1CS based on sumcheck with
 a linear prover. This is indeed Spartan, but we're still missing the core
-contribution of Spartan, _Spark_. Spark solves our last problem, namely that
+contribution of Spartan, namely _Spark_. Spark solves our last problem, that
 the verifier still needs the evaluations of $tilde(A), tilde(B), tilde(C)$
-in the last round of the $g_2$ sumcheck. Of course the verifier could do
+in the last round of the $g_2$ sumcheck. Of course, the verifier could do
 this themselves, but this would take at least $O(n + m)$ time, making the
 verifier linear. Another option is to use a PCS as described in @sec:pcs,
-but any standard scheme would slow down the prover $O(m^2)$ when doing an
-opening proof.
+but any standard scheme would slow down the prover to at least $O(m^2)$
+when doing an opening proof, since each of the matrix-polynomials is defined
+over $m times m$ entries.
 
 In Spark the prover only suffers a penalty of $O(n + m)$, meaning we get
 the desired prover time. The main idea is:
 
-$tilde(M)(vec(x), vec(y)) = M(vec(x), vec(y)) $
+$ tilde(M)(vec(x), vec(y)) = sum_(vec(a), vec(b) in bits^s) M(vec(x), vec(y)) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) $
+
+This sum has $lg(m) times lg(m)$ entries and subsequently takes at least
+$O(m^2)$ time for the prover and $O(lg(m^2))$ for the verifier, which is
+undesireable. We could instead only sum over the nonzero entries:
+
+$ tilde(M)(vec(x), vec(y)) = sum_(vec(k) in bits^lg(n)) val(vec(k)) dot e_"row"(vec(k)) dot e_"col"(vec(k)) $
+
+Where ...
 
 // In this section we'll introduce Spark, the sparse polynomial commitment
 // scheme. This scheme can be applied directly to conclusion from the previous
