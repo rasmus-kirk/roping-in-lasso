@@ -33,8 +33,6 @@
         ];
         standalonePages = let
           cutLines = n: file: pkgs.runCommand "trimmed-${builtins.baseNameOf file}" {} ''
-            # tail -n +K starts output at line K
-            # To skip n lines, we start at n + 1
             ${pkgs.coreutils}/bin/tail -n +${toString (n + 1)} "${file}" > $out
           '';
         in [{
@@ -48,17 +46,17 @@
             location = "/";
           }
           {
-            title = "Report";
+            title = "Writeup";
             location = "/report/report.pdf";
           }
-          {
-            title = "Contract";
-            location = "/contract/contract.pdf";
-          }
-          {
-            title = "GKR Slides";
-            location = "/slides/slides-gkr.pdf";
-          }
+          # {
+          #   title = "Contract";
+          #   location = "/contract/contract.pdf";
+          # }
+          # {
+          #   title = "Section 2-4 Slides";
+          #   location = "/slides/slides-gkr.pdf";
+          # }
           {
             title = "Github";
             location = "https://github.com/rasmus-kirk/roping-in-lasso";
