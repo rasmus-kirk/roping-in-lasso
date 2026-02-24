@@ -319,7 +319,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
 
   Consider the roots of $p$ and $q$, starting with $p$:
 
-  $ p(X) = product_((b_1, dots, b_n) in bits) tilde(f)(b_1, dots, b_n) - X $
+  $ p(X) = product_((b_1, dots, b_(ceil(lg(n)))) in bits^(ceil(lg(n)))) tilde(f)(b_1, dots, b_(ceil(lg(n)))) - X $
 
   This polynomial evaluates to zero only if one of the factors equals
   $tilde(f)(vec(b))$, so the roots are:
@@ -354,20 +354,25 @@ product of field elements.
 
 == Putting the Pieces Together
 
-One first thing notice before we start piecing together the puzzle is that our
-RAM is read-only. This means that we don't need the "Write" algorithm from
+The first thing to notice before we start piecing together the puzzle is that
+our RAM is read-only. This means that we don't need the "Write" algorithm from
 @fig:omc-verifier-procedure and the $max(ts, t)$ will always be $ts$. This
 further means that $writeTS = readTS + 1$ and we can avoid committing to it
-entirely. With this in mind, we can start defining our multisets. For all
-$i in [0, m-1]$ we let:
+entirely. With this in mind, we can start defining our multisets. For the
+RAM contents, for all $i in [0, m-1]$:
 
 $
   &tilde("id")(toBits(i))      &&= i \
   &tilde("zero")(toBits(i))    &&= 0 \
-  &tilde(col)(toBits(i))       &&= col_i \
-  &tilde(row)(toBits(i))       &&= row_i \
-  &tilde(mem)_(row)(toBits(i)) &&= eq_vec(gamma)(toBits(i)) \
-  &tilde(mem)_(col)(toBits(i)) &&= eq_vec(zeta)(toBits(i)) \
+  &tilde(mem)_(row)(toBits(i)) &&= eq_vec(zeta)(toBits(i)) \
+  &tilde(mem)_(col)(toBits(i)) &&= eq_vec(gamma)(toBits(i)) \
+$
+
+And for the sparse representation, for all $i in [0, n-1]$:
+
+$
+  &tilde(row)(toBits(i)) &&= row_i \
+  &tilde(col)(toBits(i)) &&= col_i \
 $
 
 And then define the multilinear extensions of $Init, RS, WS$ and
@@ -375,25 +380,27 @@ $Audit$, modeling these multisets using @thm:tuple-equality-proof and
 @thm:multiset-equality-proof. Note that there are two RAMs here, for the rows:
 
 $
-  Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x)), \
-  RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(row)(vec(x)), \
-  WS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(row)(vec(x)) + 1), \
-  Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(row)(vec(x)), \
+  Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))          &&- beta, \
+  RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(row)(vec(x))    &&- beta, \
+  WS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(row)(vec(x)) + 1) &&- beta, \
+  Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(row)(vec(x))   &&- beta, \
 $
 
 And the columns:
 
 $
-  Init_(col)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x)), \
-  RS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(col)(vec(x)), \
-  WS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(col)(vec(x)) + 1), \
-  Audit_(col)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(col)(vec(x)), \
+  Init_(col)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))          &&- beta, \
+  RS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(col)(vec(x))    &&- beta, \
+  WS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(col)(vec(x)) + 1) &&- beta, \
+  Audit_(col)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(col)(vec(x))   &&- beta, \
 $
 
-Where $tilde(readTS)_row, tilde(auditTS)_row, tilde(readTS)_col$ and
-$tilde(auditTS)_col$ are computed as in @fig:omc-verifier-procedure. Then,
-we can use the specialized Grand Product GKR protocol of @sec:specialized-gkr
-to verify each of the below grand products:
+The polynomials $tilde(readTS)_row, tilde(auditTS)_row, tilde(readTS)_col$
+and $tilde(auditTS)_col$ are derived from running the Read algorithm in
+@fig:omc-verifier-procedure over all $n$ nonzero entries. Then, we can
+use the specialized Grand Product GKR protocol of @sec:specialized-gkr to
+verify each of the below grand products (shown for the row RAM; the column
+RAM is analogous):
 
 $
   "eval"_(WS)^((1)) &= product_(vec(b) in bits^ceil(lg(m))) Init_(row)(vec(b)),  #h(3em) &&"eval"_(WS)^((2)) &&= product_(vec(b) in bits^ceil(lg(n))) WS_(row)(vec(b)), \
@@ -404,12 +411,12 @@ Which the verifier can use to check whether:
 
 $ "eval"_(WS)^((1)) dot "eval"_(WS)^((2)) meq "eval"_(RS)^((1)) dot "eval"_(RS)^((2)) $
 
-Thus, showing the correctness of the memory-checking. In the final round
+This shows the correctness of the memory checking. In the final round
 of the grand product argument, the verifier will need to evaluate each of
 these polynomials at a uniformly randomly chosen $vec(r)$. Taking
 $Init_(row)(vec(x))$ as an example:
 
-$ Init_(row)(vec(x)) &= tilde("id")(vec(x)) + alpha dot tilde(mem)_(row)(vec(x)) + alpha^2 dot tilde("zero")(vec(x)) $
+$ Init_(row)(vec(x)) &= tilde("id")(vec(x)) + alpha dot tilde(mem)_(row)(vec(x)) + alpha^2 dot tilde("zero")(vec(x)) - beta $
 
 We run the specialized GKR protocol over this polynomial, and at the end
 of the protocol, the verifier needs to evaluate $Init_(row)$ at a randomly
@@ -417,7 +424,7 @@ sampled point $vec(r) inrand Fb$. All three polynomials $tilde("id"),
 tilde(mem)_(row), tilde("zero")$ can be evaluated by the verifier on their
 own in logarithmic time:
 
-$ tilde(mem)_(row)(vec(r)) = eq_(vec(gamma))(vec(r)), #h(3em) tilde("zero")(vec(r)) = 0, #h(3em) tilde("id")(vec(r)) = sum_(j=1)^(lg(m)) r_j dot 2^(lg(m - j)) $
+$ tilde(mem)_(row)(vec(r)) = eq_(vec(zeta))(vec(r)), #h(3em) tilde("zero")(vec(r)) = 0, #h(3em) tilde("id")(vec(r)) = sum_(j=1)^(lg(m)) r_j dot 2^(lg(m) - j) $
 
 As for $tilde(row), tilde(col), tilde(readTS)_row, tilde(readTS)_col,
 tilde(auditTS)_row$ and $tilde(auditTS)_col$, they have no structure to

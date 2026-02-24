@@ -172,7 +172,7 @@ point.
 $ tilde(f)(vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) dot f(vec(b)) $
 
 By running the sumcheck protocol, the prover can convince the verifier that
-$tilde(f)(vec(alpha)) = 0$ for a random challenge $vec(alpha)$.
+$tilde(f)(vec(gamma)) = 0$ for a random challenge $vec(gamma)$.
 
 == Defining the Sumcheck Polynomials $g_1, g_2$
 
@@ -219,7 +219,7 @@ also have a linear-time prover.
 #proof[
   For each matrix $vec(M) in { vec(A), vec(B), vec(C) }$, compute the
   corresponding product $vec(t)_M = vec(M) vec(w)$. Since the matrices are
-  sparse with a total of $n$ nonzero entries across each, computing these three
+  sparse with a total of $n$ nonzero entries in total, computing these three
   products takes $O(n)$ time via sparse matrix-vector multiplication. As usual
   denote $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
   note that for each $macron(M) in { macron(A), macron(B), macron(C) }$:
