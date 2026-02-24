@@ -32,7 +32,7 @@
           '')
         ];
         standalonePages = [{
-          title = "From Bulletproofs to Lasso";
+          title = "Roping in Lasso";
           inputFile = ./README.md;
           outputFile = "index.html";
         }];
