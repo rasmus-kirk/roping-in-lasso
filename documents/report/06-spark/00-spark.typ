@@ -20,7 +20,7 @@
 
 = Spark
 
-We left off last section, with an argument for R1CS based on sumcheck with
+We left off in the last section with an argument for R1CS based on sumcheck with
 a linear prover. This is indeed Spartan, but we're still missing the core
 contribution of Spartan, namely _Spark_. Spark solves our last problem, that
 the verifier still needs the evaluations of $tilde(A), tilde(B), tilde(C)$
@@ -32,11 +32,16 @@ when doing an opening proof, since each of the matrix-polynomials is defined
 over $m times m$ entries.
 
 In Spark the prover only suffers a penalty of $O(n + m)$, meaning we get
-the desired prover time. The main idea is:
+the desired prover time. Note that committing to the matrices $tilde(A),
+tilde(B), tilde(C)$ is a _preprocessing_ step (Section 6 of the Spartan
+paper), while Spark itself (Section 7 of the Spartan paper) is the _runtime_
+sparse polynomial commitment scheme that enables efficient evaluation at a
+queried point. To see Spark's contribution, let's start by looking at the
+multilinear extension of $M$:
 
 $ tilde(M)(vec(zeta), vec(gamma)) = sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) dot tilde("eq")(vec(gamma), vec(b)) $
 
-This can obviously not be represented with a sumcheck. We would need each
+This obviously cannot be represented as a sumcheck instance. We would need each
 factor of each term in the sum to be a polynomial, and the multilinear
 extension of $M$ is $tilde(M)$ itself. But, we can represent the evaluation
 of $tilde(M)$ in its sparse form.
@@ -50,10 +55,10 @@ $
                                   &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot tilde("eq")(vec(zeta), "row"(vec(k))) dot tilde("eq")(vec(gamma), "col"(vec(k)))
 $<eq:spark-sumcheck>
 
-Where:
-- $"val"(vec(i)) : bits^n -> Fb$ maps a bitstring to the value of the $"toInt"(vec(i))$'th nonzero entry of $M$.
-- $"row"(vec(i)) : bits^n -> bits^n$ maps a bitstring to the row index of the $"toInt"(vec(i))$'th nonzero entry of $M$
-- $"col"(vec(i)) : bits^n -> bits^n$ maps a bitstring to the column index of the $"toInt"(vec(i))$'th nonzero entry of $M$.
+Where for all $i in [1, n]$:
+- $"val"(toBits(i)) : bits^(ceil(lg(n))) -> Fb$ maps a bitstring to the value of the $i$'th nonzero entry of $M$.
+- $"row"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the row index of the $i$'th nonzero entry of $M$.
+- $"col"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the column index of the $i$'th nonzero entry of $M$.
 
 #example-box(title: "Sparse Representation of a Small Matrix")[
   Consider the following small matrix:
@@ -77,8 +82,8 @@ Where:
 In the preprocessing of the R1CS instance, a trusted party (sometimes the
 verifier itself) computes a succinct representation of the R1CS instance. This
 is how SNARKs are even able to achieve sublinear verification. A polynomial
-commitment to $"val"$ can be at this stage, but notice that the other two
-products of each term depends on the challenges $vec(zeta)$ and $vec(gamma)$.
+commitment to $"val"$ can be computed at this stage, but notice that the other two
+products of each term depend on the challenges $vec(zeta)$ and $vec(gamma)$.
 
 If the prover could access a trusted RAM, consisting of all $m$ values of
 $
@@ -96,7 +101,7 @@ Lasso and offline memory checking.
 
 == Offline Memory Checking
 
-In offline memory checking the goal is for a potentially malicious prover
+Offline memory checking @blum1991checking allows a potentially malicious prover
 ($prover$) to control a RAM for the verifier to access. The verifier
 ($verifier$) can read and write to this RAM and verify that each read
 accesses the last write performed on that address. We can model a RAM as
@@ -104,16 +109,16 @@ list of values:
 
 $ vec("RAM") = [v_1, ..., v_m] $
 
-We can include _timestamps_ in this list corresponding to the time that
-the last write occurred at an address. Specifically, this represents the
-number of times each address has been accessed:
+We can include _timestamps_ in this list corresponding to the time that the
+last write occurred at an address. The timestamp is a global monotonically
+increasing counter, where each read or write operation increments it:
 
 $ vec("RAM") = [(v_1, t_1), ..., (v_m, t_m)] $
 
 Of course, it's equally valid to model this as a multi-set with an extra
 tuple value indicating the address:
 
-$ "RAM" = { (a_1, v_1, t_1), ..., (a_m, v_m, t_m) } = { (1, v_1, t_1), ..., (n, v_m, t_m) } $
+$ "RAM" = { (a_1, v_1, t_1), ..., (a_m, v_m, t_m) } = { (1, v_1, t_1), ..., (m, v_m, t_m) } $
 
 This is what the untrusted RAM stores controlled by $prover$, $verifier$ can
 then use the following algorithms to modify this untrusted ram by performing
@@ -155,7 +160,7 @@ reads or writes:
   ]
 ])<fig:omc-verifier-procedure>
 
-Here, $verifier$ keeps locally stores, and modifies, the sets $WS, RS$. We
+Here, $verifier$ locally stores and modifies the sets $WS, RS$. We
 also denote the sets $Init, Audit$ which represents the initial writes and a
 final read pass respectively, giving $verifier$ the following sets:
 
@@ -180,10 +185,10 @@ and each time $verifier$ adds a tuple to $RS$ a coin is "spent".
     columns: 2,
     rows: 2,
     align: left,
-    [$WS$: Minted coins throughout],
-    [$RS$: Spent coins],
-    [$Audit$: Unspent coins],
     [$Init$: Initially minted coins],
+    [$RS$: Spent coins],
+    [$WS$: Minted coins throughout],
+    [$Audit$: Unspent coins],
   )
 ]
 
@@ -220,15 +225,15 @@ And intuitively fake coins would not have a corresponding member in the
 
   *Fake value case:* $prover$ sends $(v_"fake", t)$ in step one of
   the Read protocol. The verifier then adds $(a, v_"fake", t)$ to the $RS$
-  set. But this value was never written to the set $WS$, so when the verifier
-  makes the check in @eq:omc-set-check will fail with probability one.
+  set. But this value was never written to the set $WS$, so the check in
+  @eq:omc-set-check will fail with probability one.
 
   *Previously valid value case:* $prover$ sends $(v_"old", t_"old")$
   in step one of the Read protocol. The verifier then adds $(a, v_"old",
   t_"old")$ to the $RS$ set. This means that $RS$ has two entries of $(a,
   v_"old", t_"old")$, but since timestamps are always increasing, $WS$ will
-  only have a single entry. Thus when the verifier makes the check in
-  @eq:omc-set-check will fail with probability one.
+  only have a single entry. Thus the check in @eq:omc-set-check will fail
+  with probability one.
 ]
 
 The sets $WS, RS$ quickly grow to be potentially bigger than the size of
@@ -291,7 +296,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
   of $F, G$ respectively. The prover can try to convince the verifier that:
 
   $
-    product_(vec(b) in bits^n) tilde(f)(vec(b)) - beta &meq product_(vec(b) in bits^n) tilde(g)(vec(b)) - beta
+    product_(vec(b) in bits^(ceil(lg(n)))) tilde(f)(vec(b)) - beta &meq product_(vec(b) in bits^(ceil(lg(n)))) tilde(g)(vec(b)) - beta
   $
 
   For a uniformly random $beta$ and with soundness bound $frac(style:
@@ -303,8 +308,8 @@ proving tuple equality. The two lemmas below handle each of these cases:
   the equality as a polynomial variable in $beta$:
 
   $
-    p(X) &= product_(vec(b) in bits^n) tilde(f)(vec(b)) - X \
-    q(X) &= product_(vec(b) in bits^n) tilde(g)(vec(b)) - X \
+    p(X) &= product_(vec(b) in bits^(ceil(lg(n)))) tilde(f)(vec(b)) - X \
+    q(X) &= product_(vec(b) in bits^(ceil(lg(n)))) tilde(g)(vec(b)) - X \
   $
 
   Then by Schwarz-Zippel, if we consider $e(X) = p(X) - q(X)$ then $e(beta)
@@ -341,10 +346,11 @@ $ Init union WS meq RS union Audit $
 With the verifier checking whether all the elements of the read set and all
 the elements of the write set, are equal to some claimed value $h$:
 
-$ h meq product_((a, v, t) in RS union Audit) a + alpha v + alpha^2 t meq product_((a,v,t) in Init union WS) a + alpha v + alpha^2 t $
+$ h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta) meq product_((a,v,t) in Init union WS) (a + alpha v + alpha^2 t - beta) $
 
-Which is an excellent use-case for the specialized GKR protocol in
-@sec:specialized-gkr.
+Which is an excellent use-case for the specialized GKR protocol from
+@sec:specialized-gkr, since it can efficiently prove the correctness of a
+product of field elements.
 
 == Putting the Pieces Together
 
