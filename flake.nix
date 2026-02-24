@@ -31,9 +31,15 @@
             cp -a ${(documentsF pkgs).packages.slidesGkr} $out/slides-gkr.pdf
           '')
         ];
-        standalonePages = [{
-          title = "Roping in Lasso";
-          inputFile = ./README.md;
+        standalonePages = let
+          cutLines = n: file: pkgs.runCommand "trimmed-${builtins.baseNameOf file}" {} ''
+            # tail -n +K starts output at line K
+            # To skip n lines, we start at n + 1
+            ${pkgs.coreutils}/bin/tail -n +${toString (n + 1)} "${file}" > $out
+          '';
+        in [{
+          pageTitle = "Roping in Lasso";
+          inputFile = cutLines 2 ./README.md;
           outputFile = "index.html";
         }];
         navbar = [
@@ -76,6 +82,7 @@
 
       packages = forAllSystems ({ pkgs }: rec {
         website = (websiteF pkgs).package;
+        loop = (websiteF pkgs).loop;
         report = (documentsF pkgs).packages.report;
         slidesGkr = (documentsF pkgs).packages.slidesGkr;
         default = website;
