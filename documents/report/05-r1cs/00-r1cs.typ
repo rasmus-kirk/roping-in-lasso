@@ -2,7 +2,7 @@
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 #import "@preview/algo:0.3.6": algo, i, d, comment, code
 
-= R1CS
+= Spartan
 
 A popular alternative to GKR's layered circuit representation is R1CS. This
 proof system represents computation of an arithmetic circuit as a system of

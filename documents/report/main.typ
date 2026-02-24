@@ -28,4 +28,5 @@
 #include "./03-gkr/00-gkr.typ"
 #include "./04-specialized-gkr/00-specialized-gkr.typ"
 #include "./05-r1cs/00-r1cs.typ"
-#include "./06-offline-memory-checking/00-offline-memory-checking.typ"
+#include "./06-spark/00-spark.typ"
+#include "./07-lasso/00-lasso.typ"

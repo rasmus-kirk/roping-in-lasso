@@ -14,6 +14,7 @@ Rasmus
 Shamir
 Thaler's
 Zippel
+bitstring
 bitstrings
 homomorphic
 lifecycle

@@ -6,6 +6,15 @@
 #let WS = "WS"
 #let RS = "RS"
 #let Audit = "Audit"
+#let mem = "mem"
+#let row = "row"
+#let col = "col"
+#let eq = $tilde("eq")$
+#let readTS = "read_ts"
+#let writeTS = "write_ts"
+#let auditTS = "audit_ts"
+#let toBits = "toBits"
+#let toInt = "toInt"
 #let TODO = text(weight: "bold", size: 1.2em,  "TODO")
 #let ts = $t s$
 
@@ -25,27 +34,65 @@ over $m times m$ entries.
 In Spark the prover only suffers a penalty of $O(n + m)$, meaning we get
 the desired prover time. The main idea is:
 
-$ tilde(M)(vec(x), vec(y)) = sum_(vec(a), vec(b) in bits^s) M(vec(x), vec(y)) dot tilde("eq")(vec(x), vec(a)) dot tilde("eq")(vec(y), vec(b)) $
+$ tilde(M)(vec(zeta), vec(gamma)) = sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) dot tilde("eq")(vec(gamma), vec(b)) $
 
-This sum has $lg(m) times lg(m)$ entries and subsequently takes at least
-$O(m^2)$ time for the prover and $O(lg(m^2))$ for the verifier, which is
-undesireable. We could instead only sum over the nonzero entries:
+This can obviously not be represented with a sumcheck. We would need each
+factor of each term in the sum to be a polynomial, and the multilinear
+extension of $M$ is $tilde(M)$ itself. But, we can represent the evaluation
+of $tilde(M)$ in its sparse form.
 
-$ tilde(M)(vec(x), vec(y)) = sum_(vec(k) in bits^lg(n)) val(vec(k)) dot e_"row"(vec(k)) dot e_"col"(vec(k)) $
+$ M_"nz" = { ("val"_1, "row"_1, "col"_1), ..., ("val"_n, "row"_n, "col"_n) } $
 
-Where ...
+And model the evaluation of $tilde(M)$ with this form:
 
-// In this section we'll introduce Spark, the sparse polynomial commitment
-// scheme. This scheme can be applied directly to conclusion from the previous
-// to achieve an R1CS prover which takes linear time in the number of nonzero
-// entries of the R1CS matrices. Before delving directly into Spark, we'll
-// first introduce the concept of _offline memory checking_, which lies at the
-// heart of Spark.
+$
+  tilde(M)(vec(zeta), vec(gamma)) &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot e_("row")(vec(k)) dot e_("col")(vec(k)) \
+                                  &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot tilde("eq")(vec(zeta), "row"(vec(k))) dot tilde("eq")(vec(gamma), "col"(vec(k)))
+$<eq:spark-sumcheck>
 
-// Offline memory checking also serves as the backbone of Jolt, since when
-// we need to model instruction sets, we also need to handle reads and writes
-// to registers. This document will not cover Jolt, but understanding Jolt
-// mostly boils down to understanding Lasso and offline memory checking.
+Where:
+- $"val"(vec(i)) : bits^n -> Fb$ maps a bitstring to the value of the $"toInt"(vec(i))$'th nonzero entry of $M$.
+- $"row"(vec(i)) : bits^n -> bits^n$ maps a bitstring to the row index of the $"toInt"(vec(i))$'th nonzero entry of $M$
+- $"col"(vec(i)) : bits^n -> bits^n$ maps a bitstring to the column index of the $"toInt"(vec(i))$'th nonzero entry of $M$.
+
+#example-box(title: "Sparse Representation of a Small Matrix")[
+  Consider the following small matrix:
+  $ vec(A) = mat(
+    0,7,0,6;
+    5,0,0,4;
+    0,3,2,0;
+    0,0,1,0;
+  ) $
+
+  In its sparse form (with simplified function domains of $Fb -> Fb$):
+
+  $
+    A_"nz" &= { &&(7,1,2), &&(6,1,4), &&(5,2,1), &&(4,2,4), &&(3,3,2), &&(2,3,3), &&(1,4,3) }, \
+    "val"  &= { &&1 -> 7,  &&2 -> 6,  &&3 -> 5,  &&4 -> 4,  &&5 -> 3,  &&6 -> 2,  &&7 -> 1 }, \
+    "row"  &= { &&1 -> 1,  &&2 -> 1,  &&3 -> 2,  &&4 -> 2,  &&5 -> 3,  &&6 -> 3,  &&7 -> 4 }, \
+    "col"  &= { &&1 -> 2,  &&2 -> 4,  &&3 -> 1,  &&4 -> 4,  &&5 -> 2,  &&6 -> 3,  &&7 -> 3 }, \
+  $
+]
+
+In the preprocessing of the R1CS instance, a trusted party (sometimes the
+verifier itself) computes a succinct representation of the R1CS instance. This
+is how SNARKs are even able to achieve sublinear verification. A polynomial
+commitment to $"val"$ can be at this stage, but notice that the other two
+products of each term depends on the challenges $vec(zeta)$ and $vec(gamma)$.
+
+If the prover could access a trusted RAM, consisting of all $m$ values of
+$
+  (tilde("eq")(vec(zeta), "row"("toBits"(1))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m))) \
+  (tilde("eq")(vec(gamma), "col"("toBits"(1))), dots, tilde("eq")(vec(gamma), "col"("toBits"(m)))
+$
+
+Then we _could_ perform sumcheck of the sum in @eq:spark-sumcheck. The next
+section will introduce the concept of _offline memory checking_, which solves
+this problem and lies at the heart of Spark. Offline memory checking also
+serves as the backbone of Jolt, since when we need to model instruction sets,
+we also need to handle reads and writes to registers. This document will
+not cover Jolt, but understanding Jolt mostly boils down to understanding
+Lasso and offline memory checking.
 
 == Offline Memory Checking
 
@@ -151,13 +198,13 @@ And intuitively fake coins would not have a corresponding member in the
 
 #definition(title: "Read Consistency")[
   Any value read from the RAM will always be the most recently written value.
-]
+]<def:read-consistency>
 
 #lemma[
   A verifier interacting with a potentially malicious prover that manages
   the RAM by leveraging the protocol above will have read-consistency with
   probability one.
-]
+]<lem:read-consistency>
 
 #proof[
   Assume that for some read, $prover$ was able to convince $verifier$ that
@@ -190,7 +237,7 @@ answer is that we can store these sets as a digest instead. Each time we add
 to each set we append the element to the running hash and in the end of the
 protocol we compare the digests rather than the multi-sets.
 
-== Spark - Constructing a Sparse Polynomial Commitment Scheme
+== Constructing a Sparse Polynomial Commitment Scheme
 
 In Spark, we apply the offline memory-checking primitive in an alternative
 way. Here, the prover itself is the one that reads a public read-only RAM,
@@ -298,3 +345,83 @@ $ h meq product_((a, v, t) in RS union Audit) a + alpha v + alpha^2 t meq produc
 
 Which is an excellent use-case for the specialized GKR protocol in
 @sec:specialized-gkr.
+
+== Putting the Pieces Together
+
+One first thing notice before we start piecing together the puzzle is that our
+RAM is read-only. This means that we don't need the "Write" algorithm from
+@fig:omc-verifier-procedure and the $max(ts, t)$ will always be $ts$. This
+further means that $writeTS = readTS + 1$ and we can avoid committing to it
+entirely. With this in mind, we can start defining our multisets. For all
+$i in [0, m-1]$ we let:
+
+$
+  &tilde("id")(toBits(i))      &&= i \
+  &tilde("zero")(toBits(i))    &&= 0 \
+  &tilde(col)(toBits(i))       &&= col_i \
+  &tilde(row)(toBits(i))       &&= row_i \
+  &tilde(mem)_(row)(toBits(i)) &&= eq_vec(gamma)(toBits(i)) \
+  &tilde(mem)_(col)(toBits(i)) &&= eq_vec(zeta)(toBits(i)) \
+$
+
+And then define the multilinear extensions of $Init, RS, WS$ and
+$Audit$, modeling these multisets using @thm:tuple-equality-proof and
+@thm:multiset-equality-proof. Note that there are two RAMs here, for the rows:
+
+$
+  Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x)), \
+  RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(row)(vec(x)), \
+  WS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(row)(vec(x)) + 1), \
+  Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(row)(vec(x)), \
+$
+
+And the columns:
+
+$
+  Init_(col)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x)), \
+  RS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(col)(vec(x)), \
+  WS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(col)(vec(x)) + 1), \
+  Audit_(col)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(col)(vec(x)), \
+$
+
+Where $tilde(readTS)_row, tilde(auditTS)_row, tilde(readTS)_col$ and
+$tilde(auditTS)_col$ are computed as in @fig:omc-verifier-procedure. Then,
+we can use the specialized Grand Product GKR protocol of @sec:specialized-gkr
+to verify each of the below grand products:
+
+$
+  "eval"_(WS)^((1)) &= product_(vec(b) in bits^ceil(lg(m))) Init_(row)(vec(b)),  #h(3em) &&"eval"_(WS)^((2)) &&= product_(vec(b) in bits^ceil(lg(n))) WS_(row)(vec(b)), \
+  "eval"_(RS)^((1)) &= product_(vec(b) in bits^ceil(lg(m))) Audit_(row)(vec(b)), #h(3em) &&"eval"_(RS)^((2)) &&= product_(vec(b) in bits^ceil(lg(n))) RS_(row)(vec(b)), \
+$
+
+Which the verifier can use to check whether:
+
+$ "eval"_(WS)^((1)) dot "eval"_(WS)^((2)) meq "eval"_(RS)^((1)) dot "eval"_(RS)^((2)) $
+
+Thus, showing the correctness of the memory-checking. In the final round
+of the grand product argument, the verifier will need to evaluate each of
+these polynomials at a uniformly randomly chosen $vec(r)$. Taking
+$Init_(row)(vec(x))$ as an example:
+
+$ Init_(row)(vec(x)) &= tilde("id")(vec(x)) + alpha dot tilde(mem)_(row)(vec(x)) + alpha^2 dot tilde("zero")(vec(x)) $
+
+We run the specialized GKR protocol over this polynomial, and at the end
+of the protocol, the verifier needs to evaluate $Init_(row)$ at a randomly
+sampled point $vec(r) inrand Fb$. All three polynomials $tilde("id"),
+tilde(mem)_(row), tilde("zero")$ can be evaluated by the verifier on their
+own in logarithmic time:
+
+$ tilde(mem)_(row)(vec(r)) = eq_(vec(gamma))(vec(r)), #h(3em) tilde("zero")(vec(r)) = 0, #h(3em) tilde("id")(vec(r)) = sum_(j=1)^(lg(m)) r_j dot 2^(lg(m - j)) $
+
+As for $tilde(row), tilde(col), tilde(readTS)_row, tilde(readTS)_col,
+tilde(auditTS)_row$ and $tilde(auditTS)_col$, they have no structure to
+exploit, so the verifier needs the prover to perform evaluation proofs on
+them on behalf of the verifier. But, a trusted party makes the commitments,
+so the verifier trusts that they are the right polynomials.
+
+The remaining $e_col$ and $e_row$ polynomials are committed to by the prover
+but the verifier need not check their structure! If the prover committed to
+invalid polynomials here, it would be equivalent to breaking read-consistency,
+which we proved was impossible in @lem:read-consistency#footnote[Technically
+possible in our case since we prove the multi-set equality using interactive
+arguments, but negligible.]

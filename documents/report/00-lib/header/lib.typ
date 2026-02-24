@@ -23,6 +23,11 @@
   title: "To-Do",
   icon-name: "pencil",
 )
+#let slop-box = note-box.with(
+  fill: theme.strong.aqua,
+  title: "SlopBox",
+  icon-name: "dependabot",
+)
 #let remark = remark.with(
   fill: theme.strong.aqua,
 )
