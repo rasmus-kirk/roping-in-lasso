@@ -47,6 +47,38 @@
 )
 #show ref: set text(fill: theme.fg1)
 
+#set text(
+  font: "New Computer Modern"
+)
+
+#show math.equation: set text(font: "Fira Math")
+#show math.equation: set text(font: "New Computer Modern Math")
+#set math.mat(delim: "[")
+
+#let pad_bitstring(length, bits) = {
+  let bitstring = str(bits)
+  let diff = length - bitstring.len()
+
+  if diff > 0 {
+    // Multiply the "0" string by the difference to create the padding
+    bitstring = ("0" * diff) + bitstring
+  }
+
+  bitstring
+}
+#let b(
+  l: 2,
+  fill: color.rgb("#fbf1c7"),
+  bits
+) = box(
+  fill: fill,
+  inset: 2pt,
+  radius: 2pt,
+  baseline: 2pt,
+  [#text(font: "FiraCode Nerd Font", size: 8.8pt, pad_bitstring(l, bits));]
+)
+
+
 // Math
 #let meq = math.eq.quest;
 #let wildcard = underline("  ")
@@ -70,4 +102,23 @@
 #let vec(body) = $bold(body)$
 #let innerprod(A, B) = $chevron.l #A, #B chevron.r$
 #let hadamard = $dot.o$
+
+#let Init = "Init"
+#let WS = "WS"
+#let RS = "RS"
+#let Audit = "Audit"
+#let val = "val"
+#let mem = "mem"
+#let row = "row"
+#let col = "col"
+#let nz = "nz"
+#let eq = $tilde("eq")$
+#let readTS = "read_ts"
+#let writeTS = "write_ts"
+#let auditTS = "audit_ts"
+#let toBits = "toBits"
+#let toInt = "toInt"
+#let TODO = text(weight: "bold", size: 1.2em,  "TODO")
+#let ts = $t s$
+
 

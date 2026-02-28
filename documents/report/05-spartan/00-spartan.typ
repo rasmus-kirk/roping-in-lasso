@@ -12,7 +12,7 @@ $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $<eq:r1cs-claim>
 
 Where $vec(w) in Fb^N$ is the witness vector containing all inputs, outputs,
 and intermediate variables of the circuit and $vec(A), vec(B), vec(C) in
-Fb^(M times N)$ are sparse matrices encoding the structure of the circuit.
+Fb^(m times N)$ are sparse matrices encoding the structure of the circuit.
 
 Unlike GKR, which requires the circuit to be organized into layers of uniform
 depth, R1CS allows for "flat" structures where any variable can interact
@@ -109,14 +109,13 @@ polynomial identity holds.
 == Arithmetizing R1CS
 
 Without loss of generality, we simplify the domain of $vec(A), vec(B), vec(C)$
-to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let
-$n$ denote the total number of nonzero entries across the matrices $vec(A),
-vec(B), vec(C)$. To avoid
-writing everything thrice we denote $vec(M) in {vec(A), vec(B), vec(C) }$. We
-also define $"toBits"(x) : nats -> bits^(ceil(lg(x)))$ and $"toInt"(vec(x))
-: bits^(|vec(x)|) -> nats$ representing the isomorphic functions between
-the natural numbers and their corresponding bitstrings. We can naturally
-express $vec(M), vec(w)$ as functions:
+to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let $n$
+denote the total number of nonzero entries in each matrix $vec(A), vec(B),
+vec(C)$. To avoid writing everything thrice we denote $vec(M) in {vec(A),
+vec(B), vec(C) }$. We also define $"toBits"(x) : nats -> bits^(ceil(lg(x)))$
+and $"toInt"(vec(x)) : bits^(|vec(x)|) -> nats$ representing the isomorphic
+functions between the natural numbers and their corresponding bitstrings. We
+can naturally express $vec(M), vec(w)$ as functions:
 
 $
   forall vec(x),vec(y) in bits^s &: M(vec(x), vec(y)) &&= M_("toInt"(vec(x)),"toInt"(vec(y))) \
@@ -219,7 +218,7 @@ also have a linear-time prover.
 #proof[
   For each matrix $vec(M) in { vec(A), vec(B), vec(C) }$, compute the
   corresponding product $vec(t)_M = vec(M) vec(w)$. Since the matrices are
-  sparse with a total of $n$ nonzero entries in total, computing these three
+  sparse with a total of $n$ nonzero entries in total, computing each of these
   products takes $O(n)$ time via sparse matrix-vector multiplication. As usual
   denote $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
   note that for each $macron(M) in { macron(A), macron(B), macron(C) }$:
@@ -229,7 +228,7 @@ also have a linear-time prover.
   This means the prover can build a lookup table for each $macron(M)$ from the
   corresponding $vec(t)_M$:
 
-  $ tilde(t)_M (vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) t_M (vec(b)) $
+  $ tilde(t)_M (vec(x)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) dot t_M (vec(b)) $
 
   Since @eq:equality-between-macron-M-and-t holds, then it must also be
   true that the polynomials $tilde(t)_M$ and $macron(M)$ are equal, i.e.
@@ -273,17 +272,16 @@ By utilizing a Lemma which is quite similar to @lem:multiple-evals-same-poly:
   $
 
   $verifier$ can then check that $q(vec(r)) = v_1 + alpha dot v_2 + alpha^2
-  dot v_3 + dots.c + alpha^(k-1) dot v_k$. The claim that $v_i = p_i(vec(r))$
+  dot v_3 + dots.c + alpha^(k-1) dot v_k$. The claim that $v_i = p_(i)(vec(r))$
   for all $i$ will then hold except with negligible probability of $frac(k -
   1, |Fb|)$, given that $q$ is defined as above.
 ] <lem:multiple-polys-same-point>
 #proof[
-  #set math.equation(numbering: none)
   If $q(vec(r)) = v_1 + alpha dot v_2 + dots.c + alpha^(k-1) dot v_k$ but the
-  claim does not hold for some $i$, i.e. $v_i != p_i(vec(r))$, then the
+  claim does not hold for some $i$, i.e. $v_i != p_(i)(vec(r))$, then the
   following univariate polynomial in $alpha$ is nonzero:
 
-  $ e(X) = (v_1 + X dot v_2 + dots.c + X^(k-1) dot v_k) - (p_1(vec(r)) + X dot p_2(vec(r)) + dots.c + X^(k-1) dot p_k(vec(r))) $
+  $ e(X) = (v_1 + X dot v_2 + dots.c + X^(k-1) dot v_k) - (p_1(vec(r)) + X dot p_2(vec(r)) + dots.c + X^(k-1) dot p_(k)(vec(r))) $
 
   Since $e(X)$ has degree at most $k - 1$, by the Schwartz-Zippel Lemma:
 
@@ -304,21 +302,26 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
   evaluation form (lookup table) of the matrix polynomials inside the parenthesis
   ($tilde(M)(vec(zeta), vec(x))$).
 
-  Naively computing the lookup table $hat(M)$ by iterating over all $2^s$ entries
-  of the domain $bits^s$ for $vec(zeta)$ and $vec(x)$ would take $O((2^s)^2)$
-  time. However, we can exploit the sparsity of the matrices. Let $S_M$ be
-  the set of nonzero entries for a matrix $M$, defined as tuples $(v, c, r)$
-  corresponding to value, column index, row index. The multilinear extension
-  of a matrix $M$ with respect to a fixed $vec(zeta)$ can be rewritten as a
-  sum over these sparse entries:
+  Naively computing the lookup table $hat(M)_vec(zeta)$ by iterating over
+  all $2^s$ entries of the domain $bits^s$ for $vec(zeta)$ and $vec(x)$
+  would take $O((2^s)^2)$ time. However, we can exploit the sparsity of the
+  matrices. Let $M_nz$ Be the set of nonzero entries for a matrix $M$:
+
+  $ M_nz = {(val_1, row_1, col_1), ..., (val_n, row_n, col_n) } $
+
+  Where the tuple entries corresponds to value, column index and row index
+  of the given nonzero entry. The multilinear extension of a matrix $M$
+  with respect to a fixed $vec(zeta)$ can be rewritten as a sum over these
+  sparse entries:
 
   $
-    tilde(M)(vec(zeta), vec(b)) &= sum_(vec(a) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) \
-                                &= sum_((v, c, r) in S_M : "toBits"(c) = vec(b)) v dot tilde("eq")(vec(zeta), "toBits"(r))
+    tilde(M)(vec(zeta), vec(x)) &= sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot eq(vec(zeta), vec(a)) dot eq(vec(x), vec(b)) \
+                                &= sum_(i in [1..n]) val_(i) dot eq(vec(zeta), toBits(row_i)) dot eq(vec(x), toBits(col_i))
   $
 
-  Then, using this sparse representation, we can create the lookup table
-  $hat(M)_vec(zeta)$ in $O(n + m)$ time using the algorithm below:
+  Since the points agree over all points in the boolean hypercube.  Then, using
+  this sparse representation, we can create the lookup table $hat(M)_vec(zeta)$
+  in $O(n + m)$ time using the algorithm below:
 
   #figure(
     [
@@ -330,7 +333,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
     )[
 
     $O(m)$: Initialize an array $vec(t)$ of size $m$ with zeros.\
-    $O(n)$: For each $(v, c, r) in S_M : t_c <- t_c + v dot hat("eq")_vec(zeta)["toBits"(r)]$. \
+    $O(n)$: $forall i in [1..n] : t[col_i] <- t[col_i] + val_i dot hat("eq")_vec(zeta)["toBits"(row_i)]$. \
     The resulting array $vec(t)$ is exactly $hat(M)_vec(zeta)$.\
     ]
   ])

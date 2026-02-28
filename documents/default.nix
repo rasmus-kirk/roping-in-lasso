@@ -21,7 +21,12 @@
       src = ./report;
       typstEnv = typstPkgs;
       creationTimestamp = self.lastModified;
-      fonts = [ pkgs.roboto ];
+      fonts = with pkgs; [
+        fira-math
+        roboto
+        nerd-fonts.fira-code
+        fira-code
+      ];
     };
     contract = pkgs.buildTypstDocument {
       name = "contract";

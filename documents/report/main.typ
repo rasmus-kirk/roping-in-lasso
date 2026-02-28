@@ -1,6 +1,9 @@
 #import "./00-lib/lib.typ": *
 #import "@preview/theorion:0.4.1": *
 
+#set math.mat(delim: "[")
+#set text(font: "New Computer Modern")
+#show math.equation: set text(font: "New Computer Modern Math")
 
 #show: show-theorion
 #show: ilm.with(
@@ -19,7 +22,7 @@
   date-format: "[year repr:full]-[month padding:zero]-[day padding:zero]",
   bibliography: bibliography("refs.bib", style: "./refs-style.csl"),
   figure-index: (enabled: false),
-  table-index: (enabled: true),
+  table-index: (enabled: false),
   listing-index: (enabled: true),
 )
 
@@ -27,6 +30,6 @@
 #include "./02-prerequisites/00-prerequisites.typ"
 #include "./03-gkr/00-gkr.typ"
 #include "./04-specialized-gkr/00-specialized-gkr.typ"
-#include "./05-r1cs/00-r1cs.typ"
+#include "./05-spartan/00-spartan.typ"
 #include "./06-spark/00-spark.typ"
 #include "./07-lasso/00-lasso.typ"

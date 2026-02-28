@@ -2,23 +2,7 @@
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 #import "@preview/algo:0.3.6": algo, i, d, comment, code
 
-#let Init = "Init"
-#let WS = "WS"
-#let RS = "RS"
-#let Audit = "Audit"
-#let mem = "mem"
-#let row = "row"
-#let col = "col"
-#let eq = $tilde("eq")$
-#let readTS = "read_ts"
-#let writeTS = "write_ts"
-#let auditTS = "audit_ts"
-#let toBits = "toBits"
-#let toInt = "toInt"
-#let TODO = text(weight: "bold", size: 1.2em,  "TODO")
-#let ts = $t s$
-
-= Spark
+= Spark<sec:spark>
 
 We left off in the last section with an argument for R1CS based on sumcheck with
 a linear prover. This is indeed Spartan, but we're still missing the core
@@ -355,11 +339,58 @@ product of field elements.
 == Putting the Pieces Together
 
 The first thing to notice before we start piecing together the puzzle is that
-our RAM is read-only. This means that we don't need the "Write" algorithm from
-@fig:omc-verifier-procedure and the $max(ts, t)$ will always be $ts$. This
-further means that $writeTS = readTS + 1$ and we can avoid committing to it
-entirely. With this in mind, we can start defining our multisets. For the
-RAM contents, for all $i in [0, m-1]$:
+our RAM is read-only. This means that we don't need the "#smallcaps("Write")"
+algorithm from @fig:omc-verifier-procedure and the $max(ts, t)$ will always
+be $ts$. This is useful on its own, a prover _could_ prove that they used
+the RAM honestly by proving correct execution of each "#smallcaps("Read")",
+without having to prove a $max$ operation, which is cumbersome to do in SNARKs.
+
+In our case this is not too important, as a trusted party/the verifier is
+committing to $M$ themselves, but the same line of thinking can lead us to
+another optimization. We can turn the timestamps into _counters_, such that
+each address has its own counter/timestamp.
+
+#example(title: "Global Timestamps vs Counters")[
+  To see the difference between the global timestamp (as described in
+  @fig:omc-verifier-procedure) and counters consider the following small
+  example RAM, consisting of (value, timestamp/counter) pairs:
+
+  #align(center)[
+    #table(
+      columns: 4,
+      align: left,
+      $(1, 0)$, $(7, 0)$, $(2, 0)$, $(9, 0)$
+    )
+  ]
+
+  Indexing from one and performing #smallcaps("Read(1)"), #smallcaps("Read(1)"),
+  #smallcaps("Read(1)"), #smallcaps("Read(4)") would give us:
+
+  #align(center)[
+    #table(
+      columns: 4,
+      align: left,
+      $(1, 3)$, $(7, 0)$, $(2, 0)$, $(9, 4)$
+    )
+  ]
+
+  If we use a single global timestamp. But if we use counters, then we would get:
+
+  #align(center)[
+    #table(
+      columns: 4,
+      align: left,
+      $(1, 3)$, $(7, 0)$, $(2, 0)$, $(9, 1)$
+    )
+  ]
+]
+
+You can safely assume that this does not affect the result we achieved in
+@lem:read-consistency (in fact we use it to prove a stronger version in
+@sec:lasso-improved-security-analysis). This helpfully allows us to express
+$writeTS$ as $writeTS = readTS + 1$ and thus the prover can avoid committing
+to it entirely. With this in mind, we can start defining our multisets. For
+the RAM contents, for all $i in [0, m-1]$:
 
 $
   &tilde("id")(toBits(i))      &&= i \
@@ -380,19 +411,19 @@ $Audit$, modeling these multisets using @thm:tuple-equality-proof and
 @thm:multiset-equality-proof. Note that there are two RAMs here, for the rows:
 
 $
-  Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))          &&- beta, \
-  RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(row)(vec(x))    &&- beta, \
+  Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))             &&- beta, \
+  RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(row)(vec(x))       &&- beta, \
   WS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(row)(vec(x)) + 1) &&- beta, \
-  Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(row)(vec(x))   &&- beta, \
+  Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(row)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(row)(vec(x))      &&- beta, \
 $
 
 And the columns:
 
 $
-  Init_(col)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))          &&- beta, \
-  RS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(col)(vec(x))    &&- beta, \
+  Init_(col)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x))             &&- beta, \
+  RS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot tilde(readTS)_(col)(vec(x))       &&- beta, \
   WS_(col)(vec(x))    &= tilde(col)(vec(x))  &&+ alpha dot e_(col)(vec(x))          &&+ alpha^2 dot (tilde(readTS)_(col)(vec(x)) + 1) &&- beta, \
-  Audit_(col)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(col)(vec(x))   &&- beta, \
+  Audit_(col)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde(mem)_(col)(vec(x)) &&+ alpha^2 dot tilde(auditTS)_(col)(vec(x))      &&- beta, \
 $
 
 The polynomials $tilde(readTS)_row, tilde(auditTS)_row, tilde(readTS)_col$

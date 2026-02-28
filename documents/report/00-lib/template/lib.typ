@@ -79,7 +79,7 @@
 
   // Set raw text font.
   // Default is Fira Mono at 8.8pt
-  show raw: set text(font: ("Fira Mono"), size: 8.8pt)
+  show raw: set text(font: ("FiraCode Nerd Font Mono"), size: 8.8pt)
 
   // Configure page size and margins.
   set page(
