@@ -1,6 +1,7 @@
 #import "../00-lib/header/lib.typ": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
-#import "@preview/algo:0.3.6": algo, i, d, comment, code
+
+#show smallcaps: set text(font: "New Computer Modern")
 
 = Spark<sec:spark>
 
@@ -44,7 +45,7 @@ Where for all $i in [1, n]$:
 - $"row"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the row index of the $i$'th nonzero entry of $M$.
 - $"col"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the column index of the $i$'th nonzero entry of $M$.
 
-#example-box(title: "Sparse Representation of a Small Matrix")[
+#example(title: "Sparse Representation of a Small Matrix")[
   Consider the following small matrix:
   $ vec(A) = mat(
     0,7,0,6;
@@ -81,7 +82,7 @@ this problem and lies at the heart of Spark. Offline memory checking also
 serves as the backbone of Jolt, since when we need to model instruction sets,
 we also need to handle reads and writes to registers. This document will
 not cover Jolt, but understanding Jolt mostly boils down to understanding
-Lasso and offline memory checking.
+Lasso, which will be discussed in @sec:lasso and offline memory checking.
 
 == Offline Memory Checking
 
@@ -108,40 +109,24 @@ This is what the untrusted RAM stores controlled by $prover$, $verifier$ can
 then use the following algorithms to modify this untrusted ram by performing
 reads or writes:
 
-#figure(
-  caption: [Verifier procedure for reading and writing to the untrusted RAM.],
-  [
-  #algo(
-    title: "Read",
-    parameters: ("a",),
-    fill: theme.bg0.lighten(30%),
-    block-align: left,
-    strong-keywords: false,
-    indent-guides: 1pt + theme.fg4,
-  )[
+#figure(caption: [Verifier procedure for reading and writing to the untrusted RAM.], [
+  #pseudocode(title: "Read", args: ($a$,), [
     #let arrow_len = context $#h(measure($prover --> verifier$).width - measure($verifier$).width)$
-    $prover --> verifier$: The verifier receives value $v_"read"$ and timestamp $t$ from the prover.\
-    $#arrow_len verifier$: The verifier adds the tuple $(a, v_"read", t)$ to its local set $RS$.\
-    $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
-    $#arrow_len verifier$: The verifier adds the new tuple $(a, v_"read", ts_("new"))$ to its local set $WS$.\
-    $verifier --> prover$: The verifier sends $(a, v_"read", ts_("new"))$ back to the prover.\
-  ]
+    + $prover --> verifier$: The verifier receives value $v_"read"$ and timestamp $t$ from the prover.\
+    + $#arrow_len verifier$: The verifier adds the tuple $(a, v_"read", t)$ to its local set $RS$.\
+    + $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
+    + $#arrow_len verifier$: The verifier adds the new tuple $(a, v_"read", ts_("new"))$ to its local set $WS$.\
+    + $verifier --> prover$: The verifier sends $(a, v_"read", ts_("new"))$ back to the prover.\
+  ])
 
-  #algo(
-    title: "Write",
-    parameters: ("a, v",),
-    fill: theme.bg0.lighten(30%),
-    block-align: left,
-    strong-keywords: false,
-    indent-guides: 1pt + theme.fg4,
-  )[
+  #pseudocode(title: "Write", args: ($a$, $v$), [
     #let arrow_len = context $#h(measure($prover --> verifier$).width - measure($verifier$).width)$
-    $prover --> verifier$: The verifier receives value $v_("read")$ and timestamp $t$ from the prover.\
-    $#arrow_len verifier$: The verifier adds the tuple $(a, v_("read"), t)$ to its local read set $RS$.\
-    $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
-    $#arrow_len verifier$: The verifier adds the new tuple $(a, v, ts_("new"))$ to its local write set $WS$.\
-    $verifier --> prover$: The verifier sends $(a, v, ts_("new"))$ back to the prover.\
-  ]
+    + $prover --> verifier$: The verifier receives value $v_("read")$ and timestamp $t$ from the prover.\
+    + $#arrow_len verifier$: The verifier adds the tuple $(a, v_("read"), t)$ to its local read set $RS$.\
+    + $#arrow_len verifier$: The verifier updates its local timestamp counter, i.e. $ts_("new") <- max(ts, t) + 1$.\
+    + $#arrow_len verifier$: The verifier adds the new tuple $(a, v, ts_("new"))$ to its local write set $WS$.\
+    + $verifier --> prover$: The verifier sends $(a, v, ts_("new"))$ back to the prover.\
+  ])
 ])<fig:omc-verifier-procedure>
 
 Here, $verifier$ locally stores and modifies the sets $WS, RS$. We
@@ -383,7 +368,7 @@ each address has its own counter/timestamp.
       $(1, 3)$, $(7, 0)$, $(2, 0)$, $(9, 1)$
     )
   ]
-]
+] <ex:global-timestamps-vs-counters>
 
 You can safely assume that this does not affect the result we achieved in
 @lem:read-consistency (in fact we use it to prove a stronger version in
@@ -469,3 +454,70 @@ invalid polynomials here, it would be equivalent to breaking read-consistency,
 which we proved was impossible in @lem:read-consistency#footnote[Technically
 possible in our case since we prove the multi-set equality using interactive
 arguments, but negligible.]
+
+== The Spark Protocol <sec:spark-protocol>
+
+We now present the formal Spark sparse polynomial commitment scheme,
+summarizing all the components discussed in this chapter. We start with the
+following helper algorithm that the prover can utilize to get the necessary
+timestamp polynomials:
+
+#let MemoryInTheHead = [#smallcaps("MemoryInTheHead")]
+#pseudocode(title: "MemoryInTheHead", args: ($M$,), [
+  + *Let* $m$ be the dimensions of the matrix $M in Fb^(m times m)$
+  + *Let* $vec(auditTS)_row = "vec!"[0; m], vec(auditTS)_col = "vec!"[0; m]$
+  + *Let* $vec(readTS)_row = [ #h(0.5em) ], vec(readTS)_col = [ #h(0.5em) ]$
+  + *For* $(i, j) in ([0..m], [0..m])$*:*
+    + *If* $M(i, j) != 0$*:*
+      + $vec(readTS)_row."push"(vec(auditTS)_(row)[i])$
+      + $vec(auditTS)_(row)[i] <- vec(auditTS)_(row)[i] + 1$
+      + $vec(readTS)_col."push"(vec(auditTS)_(col)[j])$
+      + $vec(auditTS)_(col)[j] <- vec(auditTS)_(col)[j] + 1$
+  + *Return* $(tilde(readTS)_row, tilde(readTS)_col, tilde(auditTS)_row, tilde(auditTS)_col)$
+])
+
+Then, let $PC = (PCSetup, PCCommit, PCOpen, PCCheck)$ be any extractable polynomial
+commitment scheme for dense multilinear polynomials. Now we can concretely
+construct the SPARK sparse polynomial commitment scheme.
+
+#pseudocode(title: "SPARK.Setup", args: ($1^lambda$, $m$, $n$), [
+  + *Return* $pp <- PCSetup(1^lambda, max(ceil(lg(m)), ceil(lg(n))))$
+])
+
+#pseudocode(title: "SPARK.Commit", args: ($pp$, $M$), [
+  + *Let* $(tilde(val), tilde(row), tilde(col))$ denote the sparse representation of $tilde(M)$ as described in text.
+    + $C_val <- PCCommit(pp, tilde(val))$
+    + $C_row <- PCCommit(pp, tilde(row))$
+    + $C_col <- PCCommit(pp, tilde(col))$
+  + *Let* $(tilde(readTS)_row, tilde(readTS)_col, tilde(auditTS)_row, tilde(auditTS)_col) <- MemoryInTheHead(M)$
+    + $C_(readTS_row) <- PCCommit(pp, tilde(readTS)_row)$
+    + $C_(readTS_col) <- PCCommit(pp, tilde(readTS)_col)$
+    + $C_(auditTS_row) <- PCCommit(pp, tilde(auditTS)_row)$
+    + $C_(auditTS_col) <- PCCommit(pp, tilde(auditTS)_col)$
+  + *Return* $C <- (C_val, C_row, C_col, C_(readTS_row), C_(readTS_col), C_(auditTS_row), C_(auditTS_col))$\
+])
+
+#pseudocode(title: "SPARK.Open", args: ($pp$, $tilde(M)$, $C$, $(m, n)$, $vec(r)$), [
+  + *Let* $(vec(zeta), vec(gamma)) = vec(r)$, where $vec(zeta), vec(gamma) in Fb^(frac(style: "horizontal", ceil(lg(m)), 2))$.
+  + *Let* $(tilde(val), tilde(row), tilde(col))$ denote the sparse representation of $tilde(M)$ as described in text.
+  + *Prover:*
+    + $vec(e)_row := [eq_vec(zeta)(row(0)), ..., eq_vec(zeta)(row(n-1))]$
+    + $vec(e)_col := [eq_vec(gamma)(col(0)), ..., eq_vec(gamma)(col(n-1))]$
+    + $C_(e_row) <- PCCommit(pp, tilde(e_row))$.
+    + $C_(e_col) <- PCCommit(pp, tilde(e_col))$.
+    + Send $C_(r_row), C_(r_col)$ to $verifier$
+  + Apply the Specialized GKR protocol as described in the previous subsection
+    to prove the correctness of $tilde(e)_row, tilde(e)_col$. Then use
+    sumcheck to prove:
+    $ v = tilde(M)(vec(zeta), vec(gamma)) = sum_(vec(b) in bits^(ceil(lg(n)))) tilde(val)(vec(b)) dot tilde(e)_(row)(vec(b)) dot tilde(e)_(col)(vec(b)) $
+])
+
+The Specialized GKR protocol can easily be turned noninteractive using
+the Fiat-Shamir heuristic. It turns a public-coin (an interactive protocol
+where the verifier only sends uniformly sampled challenge values) interactive
+proof into a non-interactive proof, by replacing all uniformly random values
+sent from the verifier to the prover with calls to a non-interactive random
+oracle. In practice, a cryptographic hash function, $rho$, is used.
+
+By using the Fiat-Shamir heuristic #smallcaps("SPARK.Open") would produce
+a proof $pi$ and naturally lead to a $#smallcaps("SPARK.Check")$ method.

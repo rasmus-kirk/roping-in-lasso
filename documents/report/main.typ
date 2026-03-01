@@ -3,6 +3,7 @@
 
 #set math.mat(delim: "[")
 #set text(font: "New Computer Modern")
+// #show smallcaps: set text(font: "New Computer Modern")
 #show math.equation: set text(font: "New Computer Modern Math")
 
 #show: show-theorion
@@ -28,8 +29,9 @@
 
 #include "./01-introduction/00-introduction.typ"
 #include "./02-prerequisites/00-prerequisites.typ"
-#include "./03-gkr/00-gkr.typ"
-#include "./04-specialized-gkr/00-specialized-gkr.typ"
-#include "./05-spartan/00-spartan.typ"
-#include "./06-spark/00-spark.typ"
-#include "./07-lasso/00-lasso.typ"
+#include "./03-sumcheck/00-sumcheck.typ"
+#include "./04-gkr/00-gkr.typ"
+#include "./05-specialized-gkr/00-specialized-gkr.typ"
+#include "./06-spartan/00-spartan.typ"
+#include "./07-spark/00-spark.typ"
+#include "./08-lasso/00-lasso.typ"

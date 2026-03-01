@@ -7,7 +7,3 @@ Reviews Done:
 - Chapter 4: 1
 - Chapter 5: 1
 - Chapter 6: 1
-
-## TODOs
-
-- [ ] Define $n$ properly...

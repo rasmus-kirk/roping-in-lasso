@@ -1,12 +1,14 @@
 #import "../00-lib/header/lib.typ": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
-#import "@preview/algo:0.3.6": algo, i, d, comment, code
 
-= Spartan
+#show smallcaps: set text(font: "New Computer Modern")
 
-A popular alternative to GKR's layered circuit representation is R1CS. This
-proof system represents computation of an arithmetic circuit as a system of
-linear constraints combined with a single multiplication per constraint:
+= Spartan <sec:spartan>
+
+A popular alternative to GKR's layered circuit representation is R1CS. R1CS
+is a constraint system that represents computation of an arithmetic circuit
+as a system of linear constraints combined with a single multiplication
+per constraint:
 
 $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $<eq:r1cs-claim>
 
@@ -113,7 +115,7 @@ to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let $n$
 denote the total number of nonzero entries in each matrix $vec(A), vec(B),
 vec(C)$. To avoid writing everything thrice we denote $vec(M) in {vec(A),
 vec(B), vec(C) }$. We also define $"toBits"(x) : nats -> bits^(ceil(lg(x)))$
-and $"toInt"(vec(x)) : bits^(|vec(x)|) -> nats$ representing the isomorphic
+and $"toInt"(vec(x)) : bits^(|vec(x)|) -> nats$ representing the bijective
 functions between the natural numbers and their corresponding bitstrings. We
 can naturally express $vec(M), vec(w)$ as functions:
 
@@ -324,19 +326,12 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
   in $O(n + m)$ time using the algorithm below:
 
   #figure(
-    [
-    #algo(
-      fill: theme.bg0.lighten(30%),
-      block-align: left,
-      strong-keywords: false,
-      indent-guides: 1pt + theme.fg4,
-    )[
-
-    $O(m)$: Initialize an array $vec(t)$ of size $m$ with zeros.\
-    $O(n)$: $forall i in [1..n] : t[col_i] <- t[col_i] + val_i dot hat("eq")_vec(zeta)["toBits"(row_i)]$. \
-    The resulting array $vec(t)$ is exactly $hat(M)_vec(zeta)$.\
+    pseudocode[
+      + $O(m)$: Initialize an array $vec(t)$ of size $m$ with zeros.
+      + $O(n)$: $forall i in [1..n] : t[col_i] <- t[col_i] + val_i dot hat("eq")_vec(zeta)["toBits"(row_i)]$. \
+      + The resulting array $vec(t)$ is exactly $hat(M)_vec(zeta)$.\
     ]
-  ])
+  )
 
   By applying this algorithm to matrices $A, B$, and $C$, the prover computes
   $hat(A), hat(B), hat(C)$ in time $O(n + m)$ each. Since we have lookup tables

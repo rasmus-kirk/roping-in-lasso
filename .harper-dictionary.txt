@@ -14,8 +14,10 @@ Rasmus
 Shamir
 Thaler's
 Zippel
+bijective
 bitstring
 bitstrings
+extractable
 homomorphic
 lifecycle
 multilinear

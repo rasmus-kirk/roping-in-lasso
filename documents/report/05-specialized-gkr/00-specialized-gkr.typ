@@ -1,6 +1,8 @@
 #import "../00-lib/header/lib.typ": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 
+#show smallcaps: set text(font: "New Computer Modern")
+
 = A specialized GKR protocol <sec:specialized-gkr>
 
 If we consider GKR for a specific circuit, then we can improve both the

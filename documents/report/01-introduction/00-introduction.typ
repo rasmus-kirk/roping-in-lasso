@@ -1,4 +1,28 @@
+#import "../00-lib/header/lib.typ": *
+
+#show smallcaps: set text(font: "New Computer Modern")
+
 = Introduction
+
+#todo-box[
+  This introduction.
+]
+
+#todo-box[
+  The specialized GKR protocol.
+]
+
+#todo-box[
+  MLE section.
+]
+
+#todo-box[
+  Lasso efficiency (commitments)
+]
+
+#todo-box[
+  Lasso PCS evals.
+]
 
 // The GKR protocol@gkr, is a central result in the study of succinct interactive
 // proofs for circuit computation. Classical research on interactive proofs often

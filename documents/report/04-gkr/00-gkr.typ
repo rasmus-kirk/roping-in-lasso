@@ -1,6 +1,8 @@
 #import "../00-lib/header/lib.typ": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 
+#show smallcaps: set text(font: "New Computer Modern")
+
 = GKR<sec:gkr>
 
 Given a circuit $circuit$, with $d$ layers, $n$ inputs and $m$ outputs,
@@ -96,10 +98,10 @@ start with the following three functions:
     numbering: none,
     $
       mat(delim: #none, column-gap: #3em, align: #left,
-        "mul"_0(0 || 0 || 0) = 1, "mul"_1(0 || 00 || 01) = 1;
-        "mul"_0(0 || 0 || 1) = 1, "mul"_1(1 || 10 || 11) = 1;
-        "mul"_0(wildcard) = 0,    "mul"_1(wildcard) = 0;
-        "add"_0(wildcard) = 0,    "add"_1(wildcard) = 0;
+        "mul"_0(#b(l: 1, 0), #b(l: 1, 0), #b(l: 1, 0))  = 1, "mul"_1(#b(l: 1, 0), #b(l: 2, 00), #b(l: 2, 01)) = 1;
+        "mul"_0(#b(l: 1, 0), #b(l: 1, 0), #b(l: 1, 1))  = 1, "mul"_1(#b(l: 1, 1), #b(l: 2, 10), #b(l: 2, 11)) = 1;
+        "mul"_0(wildcard) = 0,                                "mul"_1(wildcard) = 0;
+        "add"_0(wildcard) = 0,                                "add"_1(wildcard) = 0;
       )
     $
   )
@@ -215,10 +217,10 @@ enabling $verifier$ to compute $f_(0)(vec(b)'_0, vec(c)'_0)$:
     q(X_1, .., X_(2ell)) := p(X_1, ..., X_ell) + alpha dot p(X_(ell+1), ..., X_(2ell))
   $
 
-  $verifier$ can then check that $q(vec(r)_1, vec(r)_2) = v_1 + alpha dot v_2$.
-  The claim that $v_1 = p(vec(r)_1) and v_2 = p(vec(r)_2)$ will then hold except with
-  negligible probability of $frac(1, |Fb|)$, given that $q(X_1, ..., X_(2ell))$
-  is defined as above.
+  $verifier$ can then check that $q(vec(r)_1, vec(r)_2) = v_1 + alpha dot
+  v_2$. The claim that $v_1 = p(vec(r)_1) and v_2 = p(vec(r)_2)$ will then
+  hold except with probability of $frac(1, |Fb|)$, given that $q(X_1, ...,
+  X_(2ell))$ is defined as above.
 ] <lem:multiple-evals-same-poly>
 
 #proof[
