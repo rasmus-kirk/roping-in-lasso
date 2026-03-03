@@ -24,7 +24,7 @@ sparse polynomial commitment scheme that enables efficient evaluation at a
 queried point. To see Spark's contribution, let's start by looking at the
 multilinear extension of $M$:
 
-$ tilde(M)(vec(zeta), vec(gamma)) = sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) dot tilde("eq")(vec(gamma), vec(b)) $
+$ tilde(M)(vec(zeta), vec(eta)) = sum_(vec(a), vec(b) in bits^s) M(vec(a), vec(b)) dot tilde("eq")(vec(zeta), vec(a)) dot tilde("eq")(vec(eta), vec(b)) $
 
 This obviously cannot be represented as a sumcheck instance. We would need each
 factor of each term in the sum to be a polynomial, and the multilinear
@@ -36,8 +36,8 @@ $ M_"nz" = { ("val"_1, "row"_1, "col"_1), ..., ("val"_n, "row"_n, "col"_n) } $
 And model the evaluation of $tilde(M)$ with this form:
 
 $
-  tilde(M)(vec(zeta), vec(gamma)) &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot e_("row")(vec(k)) dot e_("col")(vec(k)) \
-                                  &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot tilde("eq")(vec(zeta), "row"(vec(k))) dot tilde("eq")(vec(gamma), "col"(vec(k)))
+  tilde(M)(vec(zeta), vec(eta)) &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot e_("row")(vec(k)) dot e_("col")(vec(k)) \
+                                  &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot tilde("eq")(vec(zeta), "row"(vec(k))) dot tilde("eq")(vec(eta), "col"(vec(k)))
 $<eq:spark-sumcheck>
 
 Where for all $i in [1, n]$:
@@ -70,12 +70,12 @@ This is a one-time cost that amortizes across all subsequent proofs for the
 same circuit and is how SNARKs are even able to achieve sublinear
 verification. A polynomial
 commitment to $"val"$ can be computed at this stage, but notice that the other two
-products of each term depend on the challenges $vec(zeta)$ and $vec(gamma)$.
+products of each term depend on the challenges $vec(zeta)$ and $vec(eta)$.
 
 If the prover could access a trusted RAM, consisting of all $m$ values of
 $
   [tilde("eq")(vec(zeta), "row"("toBits"(1))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m)))] \
-  [tilde("eq")(vec(gamma), "col"("toBits"(1))), dots, tilde("eq")(vec(gamma), "col"("toBits"(m)))]
+  [tilde("eq")(vec(eta), "col"("toBits"(1))), dots, tilde("eq")(vec(eta), "col"("toBits"(m)))]
 $
 
 Then we _could_ perform sumcheck of the sum in @eq:spark-sumcheck. The next
@@ -385,7 +385,7 @@ $
   &tilde("id")(toBits(i))      &&= i \
   &tilde("zero")(toBits(i))    &&= 0 \
   &tilde(mem)_(row)(toBits(i)) &&= eq_vec(zeta)(toBits(i)) \
-  &tilde(mem)_(col)(toBits(i)) &&= eq_vec(gamma)(toBits(i)) \
+  &tilde(mem)_(col)(toBits(i)) &&= eq_vec(eta)(toBits(i)) \
 $
 
 And for the sparse representation, for all $i in [0, n-1]$:
@@ -502,18 +502,18 @@ construct the SPARK sparse polynomial commitment scheme.
 ])
 
 #pseudocode(title: "SPARK.Open", args: ($pp$, $tilde(M)$, $C$, $(m, n)$, $vec(r)$), [
-  + *Let* $(vec(zeta), vec(gamma)) = vec(r)$, where $vec(zeta), vec(gamma) in Fb^(lg(m)), vec(r) in Fb^(2lg(m))$.
+  + *Let* $(vec(zeta), vec(eta)) = vec(r)$, where $vec(zeta), vec(eta) in Fb^(lg(m)), vec(r) in Fb^(2lg(m))$.
   + *Let* $(tilde(val), tilde(row), tilde(col))$ denote the sparse representation of $tilde(M)$ as described in text.
   + *Prover:*
     + $vec(e)_row := [eq_vec(zeta)(row(0)), ..., eq_vec(zeta)(row(n-1))]$
-    + $vec(e)_col := [eq_vec(gamma)(col(0)), ..., eq_vec(gamma)(col(n-1))]$
+    + $vec(e)_col := [eq_vec(eta)(col(0)), ..., eq_vec(eta)(col(n-1))]$
     + $C_(e_row) <- PCCommit(pp, tilde(e_row))$.
     + $C_(e_col) <- PCCommit(pp, tilde(e_col))$.
     + Send $C_(e_row), C_(e_col)$ to $verifier$
   + Apply the Specialized GKR protocol as described in the previous subsection
     to prove the correctness of $tilde(e)_row, tilde(e)_col$. Then use
     sumcheck to prove:
-    $ v = tilde(M)(vec(zeta), vec(gamma)) = sum_(vec(b) in bits^(ceil(lg(n)))) tilde(val)(vec(b)) dot tilde(e)_(row)(vec(b)) dot tilde(e)_(col)(vec(b)) $
+    $ v = tilde(M)(vec(zeta), vec(eta)) = sum_(vec(b) in bits^(ceil(lg(n)))) tilde(val)(vec(b)) dot tilde(e)_(row)(vec(b)) dot tilde(e)_(col)(vec(b)) $
 ])
 
 The Specialized GKR protocol can easily be turned noninteractive using

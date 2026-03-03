@@ -19,7 +19,7 @@ Fb^(m times N)$ are sparse matrices encoding the structure of the circuit.
 Unlike GKR, which requires the circuit to be organized into layers of uniform
 depth, R1CS allows for "flat" structures where any variable can interact
 with any other. This has led to R1CS becoming a sort of _lingua franca_ for
-SNARK circuits the last decade or so. The approach described in this chapter
+SNARK circuits over the last decade or so. The approach described in this chapter
 specifically follows Spartan@spartan, which encodes R1CS as a multilinear
 polynomial identity and uses sumcheck to verify it.
 
@@ -219,7 +219,7 @@ also have a linear-time prover.
 ]
 #proof[
   For each matrix $vec(M) in { vec(A), vec(B), vec(C) }$, compute the
-  corresponding product $vec(t)_M = vec(M) vec(w)$. Since the matrices are
+  corresponding product $vec(t)_M = vec(M) vec(w)$. Since each matrix is
   sparse with a total of $n$ nonzero entries, computing each of these products
   takes $O(n)$ time via sparse matrix-vector multiplication. As usual denote
   $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
@@ -261,7 +261,7 @@ $
                                                                 &meq sum_(vec(b) in Bool^s) ( tilde(A)(vec(zeta), vec(b)) + alpha dot tilde(B)(vec(zeta), vec(b)) + alpha^2 dot tilde(C)(vec(zeta), vec(b))) dot tilde(w)(vec(b))
 $<eq:spartan-sumcheck-two-raw>
 
-By utilizing a Lemma which is quite similar to @lem:multiple-evals-same-poly:
+By utilizing a lemma which is quite similar to @lem:multiple-evals-same-poly:
 
 #lemma(title: "Multiple Polynomials Evaluated at the Same Point")[
   For polynomials $p_1, p_2, ..., p_k$, each of $ell$ variables, if a prover
@@ -286,7 +286,7 @@ By utilizing a Lemma which is quite similar to @lem:multiple-evals-same-poly:
 
   $ e(X) = (v_1 + X dot v_2 + dots.c + X^(k-1) dot v_k) - (p_1(vec(r)) + X dot p_2(vec(r)) + dots.c + X^(k-1) dot p_(k)(vec(r))) $
 
-  Since $e(X)$ has degree at most $k - 1$, by the Schwartz-Zippel Lemma:
+  Since $e(X)$ has degree at most $k - 1$, by the Schwartz-Zippel lemma:
 
   $ Pr[e(alpha) = 0 | e(X) != 0] <= frac(k - 1, |Fb|) $
 ]
@@ -322,9 +322,10 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
                                 &= sum_(i in [1..n]) val_(i) dot eq(vec(zeta), toBits(row_i)) dot eq(vec(x), toBits(col_i))
   $
 
-  Since the points agree over all points in the boolean hypercube. Then, using
-  this sparse representation, we can create the lookup table $hat(M)_vec(zeta)$
-  in $O(n + m)$ time using the algorithm below:
+  This holds because the nonzero entries capture all contributions to the
+  sum over the boolean hypercube. Then, using this sparse representation,
+  we can create the lookup table $hat(M)_vec(zeta)$ in $O(n + m)$ time using
+  the algorithm below:
 
   #figure(
     pseudocode[
@@ -342,14 +343,14 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
 
 While the prover can compute the sumcheck efficiently, a problem arises in the final
 check. At the end of the sumcheck protocol for $g_2$, the verifier must evaluate
-the sumcheck polynomial at a random point $vec(gamma)$:
+the sumcheck polynomial at a random point $vec(eta)$:
 
 $
-  g_2(vec(gamma)) = (tilde(A)(vec(zeta), vec(gamma)) + alpha dot tilde(B)(vec(zeta), vec(gamma)) + alpha^2 dot tilde(C)(vec(zeta), vec(gamma))) dot tilde(w)(vec(gamma))
+  g_2(vec(eta)) = (tilde(A)(vec(zeta), vec(eta)) + alpha dot tilde(B)(vec(zeta), vec(eta)) + alpha^2 dot tilde(C)(vec(zeta), vec(eta))) dot tilde(w)(vec(eta))
 $
 
-Note that the verifier also needs $tilde(w)(vec(gamma))$. The evaluation
-$tilde(w)(vec(gamma))$ can be handled by a polynomial commitment scheme as
+Note that the verifier also needs $tilde(w)(vec(eta))$. The evaluation
+$tilde(w)(vec(eta))$ can be handled by a polynomial commitment scheme as
 briefly discussed in @sec:pcs.
 
 We reduced R1CS satisfiability to two rounds of sumcheck, both

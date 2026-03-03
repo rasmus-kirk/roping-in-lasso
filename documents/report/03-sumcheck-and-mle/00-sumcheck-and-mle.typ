@@ -27,7 +27,8 @@ $ forall i in [1..n] : vec(v)_i = f(toBits(i)) $
 
 In general, given any function $f(vec(x)) : bits^ell -> Fb$, we can create
 an extension polynomial $tilde(f)(vec(x))$ such that $forall vec(b)
-in bits^ell : tilde(f)(vec(b)) = f(vec(b))$ using Lagrange interpolation:
+in bits^ell : tilde(f)(vec(b)) = f(vec(b))$ using Lagrange interpolation,
+by summing over the boolean hypercube ($vec(b) in bits^ell$):
 
 $ tilde(f)(vec(x)) := sum_(vec(b) in bits^ell) f(vec(b)) dot tilde("eq")_vec(x)(vec(b)) $
 

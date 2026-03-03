@@ -6,7 +6,7 @@ Reviews Done:
 - Chapter 3: 2
 - Chapter 4: 2
 - Chapter 5: 2
-- Chapter 6: 2
+- Chapter 6: 3
 - Chapter 7: 2
 - Chapter 8: 2
 
