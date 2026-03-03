@@ -291,7 +291,7 @@ $ sigma_1 meq sum_(vec(b) in bits^lg(k)) f_1(vec(b)) and ... and sigma_n meq sum
 
 Then we can batch them using a uniformly random value $alpha inrand Fb$:
 
-$ sum_(i=1)^(n) alpha^(i-1) dot sigma_i meq sum_(vec(b) in bits^lg(k)) sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(b)) $
+$ sum_(i=1)^(n) alpha^(i-1) dot sigma_i meq sum_(vec(b) in bits^lg(k)) sum_(i=1)^(n) alpha^(i-1) dot f_(i)(vec(b)) $
 
 The same holds for our productchecks. Since the productchecks only apply
 sumcheck in the same manner as the GKR protocol we can use the sumcheck
@@ -300,7 +300,7 @@ as the grand products have the same number of entries.
 
 As for the evaluation proofs, consider the evaluations:
 
-$ v_1 = f_1(vec(zeta)), ..., v_n = f_n(vec(zeta)) $
+$ v_1 = f_1(vec(zeta)), ..., v_n = f_(n)(vec(zeta)) $
 
 Proved correct using evaluation proofs, with corresponding commitments:
 
@@ -315,7 +315,7 @@ But, assuming we have additively homomorphic commitments, the prover could
 also instead construct a batching polynomial $q$, using a uniformly random
 value $alpha$.
 
-$ q(vec(x)) = sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(x)) $
+$ q(vec(x)) = sum_(i=1)^(n) alpha^(i-1) dot f_(i)(vec(x)) $
 
 Send the evaluation and proof for $g(vec(zeta))$ along with the evaluations
 $v_1, dots, v_n$. The verifier can then check whether:
