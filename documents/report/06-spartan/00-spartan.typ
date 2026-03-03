@@ -111,8 +111,8 @@ polynomial identity holds.
 == Arithmetizing R1CS
 
 Without loss of generality, we simplify the domain of $vec(A), vec(B), vec(C)$
-to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let $n$
-denote the total number of nonzero entries in each matrix $vec(A), vec(B),
+to $Fb^(m times m)$ and $vec(w) in Fb^m$, then define $s := lg(m)$. We let
+$n$ denote the number of nonzero entries in each matrix $vec(A), vec(B),
 vec(C)$. To avoid writing everything thrice we denote $vec(M) in {vec(A),
 vec(B), vec(C) }$. We also define $"toBits"(x) : nats -> bits^(ceil(lg(x)))$
 and $"toInt"(vec(x)) : bits^(|vec(x)|) -> nats$ representing the bijective
@@ -191,8 +191,8 @@ the evaluation of the sumcheck polynomial ($g_1$) at a uniformly random point
 
 $ g_1(vec(zeta)) = tilde("eq")(vec(gamma), vec(zeta)) dot f(vec(zeta)) $<eq:spartan-sumcheck-one-poly>
 
-The verifier can of course compute $tilde("eq")(vec(gamma), vec(zeta))$
-on their own in time $O(m)$. As for $f(vec(zeta))$:
+The verifier can of course evaluate $tilde("eq")(vec(gamma), vec(zeta))$
+on their own in time $O(lg(m))$. As for $f(vec(zeta))$:
 
 $ f(vec(zeta)) = (sum_(vec(b) in bits^s) tilde(A)(vec(zeta), vec(b)) dot tilde(w)(vec(b))) dot (sum_(vec(b) in bits^s) tilde(B)(vec(zeta), vec(b)) dot tilde(w)(vec(b))) - sum_(vec(b) in bits^s) tilde(C)(vec(zeta), vec(b)) dot tilde(w)(vec(b)) $
 
@@ -213,16 +213,16 @@ polynomials at the same point. We will use a trick to reduce these three
 claims down to a single claim. But first, we'll show why this sumcheck will
 also have a linear-time prover.
 
-#theorem[
+#lemma[
   A sumcheck performed on $g_1$ will have a linear-time prover running in
   time $O(n + m)$.
 ]
 #proof[
   For each matrix $vec(M) in { vec(A), vec(B), vec(C) }$, compute the
   corresponding product $vec(t)_M = vec(M) vec(w)$. Since the matrices are
-  sparse with a total of $n$ nonzero entries in total, computing each of these
-  products takes $O(n)$ time via sparse matrix-vector multiplication. As usual
-  denote $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
+  sparse with a total of $n$ nonzero entries, computing each of these products
+  takes $O(n)$ time via sparse matrix-vector multiplication. As usual denote
+  $forall vec(b) in Bool^s : t_M (vec(b)) = (t_M)_"toInt"(vec(b))$. Now,
   note that for each $macron(M) in { macron(A), macron(B), macron(C) }$:
 
   $ forall vec(b) in Bool^s : macron(M)(vec(b)) = t_M (vec(b)) $<eq:equality-between-macron-M-and-t>
@@ -267,7 +267,8 @@ By utilizing a Lemma which is quite similar to @lem:multiple-evals-same-poly:
   For polynomials $p_1, p_2, ..., p_k$, each of $ell$ variables, if a prover
   wants to convince a verifier of $k$ claims $v_1 = p_1(vec(r)), v_2 =
   p_2(vec(r)), ..., v_k = p_(k)(vec(r))$ (all evaluated at the same point
-  $vec(r)$), then they can reduce this to a single claim over a polynomial:
+  $vec(r)$), then they can reduce this to a single claim over a polynomial,
+  using a randomly sampled $alpha inrand Fb$:
 
   $
     q(vec(x)) := p_1(vec(x)) + alpha dot p_2(vec(x)) + alpha^2 dot p_3(vec(x)) + dots.c + alpha^(k-1) dot p_(k)(vec(x))
@@ -295,7 +296,7 @@ polynomial:
 
 $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), vec(x)) + alpha^2 dot tilde(C)(vec(zeta), vec(x))) dot tilde(w)(vec(x)) $<eq:spartan-sumcheck-two-poly>
 
-#theorem[
+#lemma[
   A sumcheck performed on $g_2$ will have a linear-time prover running in
   time $O(n + m)$.
 ]
@@ -307,11 +308,11 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
   Naively computing the lookup table $hat(M)_vec(zeta)$ by iterating over
   all $2^s$ entries of the domain $bits^s$ for $vec(zeta)$ and $vec(x)$
   would take $O((2^s)^2)$ time. However, we can exploit the sparsity of the
-  matrices. Let $M_nz$ Be the set of nonzero entries for a matrix $M$:
+  matrices. Let $M_nz$ be the set of nonzero entries for a matrix $M$:
 
   $ M_nz = {(val_1, row_1, col_1), ..., (val_n, row_n, col_n) } $
 
-  Where the tuple entries corresponds to value, column index and row index
+  Where the tuple entries correspond to value, row index and column index
   of the given nonzero entry. The multilinear extension of a matrix $M$
   with respect to a fixed $vec(zeta)$ can be rewritten as a sum over these
   sparse entries:
@@ -321,7 +322,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
                                 &= sum_(i in [1..n]) val_(i) dot eq(vec(zeta), toBits(row_i)) dot eq(vec(x), toBits(col_i))
   $
 
-  Since the points agree over all points in the boolean hypercube.  Then, using
+  Since the points agree over all points in the boolean hypercube. Then, using
   this sparse representation, we can create the lookup table $hat(M)_vec(zeta)$
   in $O(n + m)$ time using the algorithm below:
 

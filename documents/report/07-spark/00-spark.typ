@@ -72,17 +72,17 @@ products of each term depend on the challenges $vec(zeta)$ and $vec(gamma)$.
 
 If the prover could access a trusted RAM, consisting of all $m$ values of
 $
-  (tilde("eq")(vec(zeta), "row"("toBits"(1))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m))) \
-  (tilde("eq")(vec(gamma), "col"("toBits"(1))), dots, tilde("eq")(vec(gamma), "col"("toBits"(m)))
+  [tilde("eq")(vec(zeta), "row"("toBits"(1))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m)))] \
+  [tilde("eq")(vec(gamma), "col"("toBits"(1))), dots, tilde("eq")(vec(gamma), "col"("toBits"(m)))]
 $
 
 Then we _could_ perform sumcheck of the sum in @eq:spark-sumcheck. The next
 section will introduce the concept of _offline memory checking_, which solves
 this problem and lies at the heart of Spark. Offline memory checking also
 serves as the backbone of Jolt, since when we need to model instruction sets,
-we also need to handle reads and writes to registers. This document will
-not cover Jolt, but understanding Jolt mostly boils down to understanding
-Lasso, which will be discussed in @sec:lasso and offline memory checking.
+we also need to handle reads and writes to registers. Jolt is not explicitly
+discussed in this document, but it largely builds upon offline memory checking
+and Lasso, the latter of which is covered in @sec:lasso.
 
 == Offline Memory Checking
 
@@ -90,7 +90,7 @@ Offline memory checking @blum1991checking allows a potentially malicious prover
 ($prover$) to control a RAM for the verifier to access. The verifier
 ($verifier$) can read and write to this RAM and verify that each read
 accesses the last write performed on that address. We can model a RAM as
-list of values:
+a list of values:
 
 $ vec("RAM") = [v_1, ..., v_m] $
 
@@ -106,7 +106,7 @@ tuple value indicating the address:
 $ "RAM" = { (a_1, v_1, t_1), ..., (a_m, v_m, t_m) } = { (1, v_1, t_1), ..., (m, v_m, t_m) } $
 
 This is what the untrusted RAM stores controlled by $prover$, $verifier$ can
-then use the following algorithms to modify this untrusted ram by performing
+then use the following algorithms to modify this untrusted RAM by performing
 reads or writes:
 
 #figure(caption: [Verifier procedure for reading and writing to the untrusted RAM.], [
@@ -130,7 +130,7 @@ reads or writes:
 ])<fig:omc-verifier-procedure>
 
 Here, $verifier$ locally stores and modifies the sets $WS, RS$. We
-also denote the sets $Init, Audit$ which represents the initial writes and a
+also denote the sets $Init, Audit$ which represent the initial writes and a
 final read pass respectively, giving $verifier$ the following sets:
 
 $
@@ -145,8 +145,8 @@ perform the following multiset equality check:
 
 $ Init union WS meq RS union Audit $<eq:omc-set-check>
 
-One way to view @eq:omc-set-check is as a coin-mint. Where each entry is a
-"coin" and each time $verifier$ adds a tuple to $WS$ a coin is "minted"
+One way to view @eq:omc-set-check is as a coin-mint. Each entry in the sets
+is a "coin" and each time $verifier$ adds a tuple to $WS$ a coin is "minted"
 and each time $verifier$ adds a tuple to $RS$ a coin is "spent".
 
 #align(center)[
@@ -154,7 +154,7 @@ and each time $verifier$ adds a tuple to $RS$ a coin is "spent".
     columns: 2,
     rows: 2,
     align: left,
-    [$Init$: Initially minted coins],
+    [$Init$: Coins minted initially],
     [$RS$: Spent coins],
     [$WS$: Minted coins throughout],
     [$Audit$: Unspent coins],
@@ -164,17 +164,17 @@ and each time $verifier$ adds a tuple to $RS$ a coin is "spent".
 By this logic, @eq:omc-set-check checks that, in total, each coin spent
 (memory read) is exactly equal to each coin minted (memory written):
 
-$ "Coins Spent" + "Coins Unspent" = "Coins Minted" $
+$ "Coins Minted Initially" + "Coins Minted Throughout" meq "Coins Spent" + "Coins Unspent"$
 
 And intuitively fake coins would not have a corresponding member in the
-"Coins Minted" set. More formally, we state that following the protocol in
+"Coins Minted" sets. More formally, we state that following the protocol in
 @eq:omc-set-check ensures _read-consistency_ with probability one.
 
 #definition(title: "Read Consistency")[
   Any value read from the RAM will always be the most recently written value.
 ]<def:read-consistency>
 
-#lemma[
+#theorem[
   A verifier interacting with a potentially malicious prover that manages
   the RAM by leveraging the protocol above will have read-consistency with
   probability one.
@@ -225,7 +225,7 @@ an argument. Furthermore, upon further inspection, you might notice that
 each entry in the multisets are tuples, so we also need an argument for
 proving tuple equality. The two lemmas below handle each of these cases:
 
-#theorem[
+#lemma[
   If a prover holds two n-length tuples and wishes to prove that they're equal:
 
   $
@@ -233,7 +233,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
     vec(b) &= ( b_1, dots, b_n ) \
   $
 
-  That is $forall i in [1..n] : f_i = g_i$, the prover can try to convince the verifier that:
+  That is $forall i in [1..n] : a_i = b_i$, the prover can try to convince the verifier that:
 
   $
     sum^n_(i=1) alpha^(i-1) dot a_i meq sum^n_(i=1) alpha^(i-1) dot b_i
@@ -244,15 +244,16 @@ proving tuple equality. The two lemmas below handle each of these cases:
 ]<thm:tuple-equality-proof>
 
 #proof[
-  Completeness is trivial, as for soundness notice that each side in
-  @eq:tuple-equality is a univariate polynomial evaluated at $alpha$ and with
-  coefficients of $vec(a), vec(b)$ respectively. If the polynomials are
-  equal, then the coefficients, which represent each element in the list,
-  are equal. By Schwarz-Zippel, the probability of the check passing, given
-  that the claim does not hold is $frac(style: "horizontal",  n, |Fb|)$.
+  Completeness is trivial since two sums of equal values are equal. As
+  for soundness: notice that each side in @eq:tuple-equality is a univariate
+  polynomial evaluated at $alpha$ and with coefficients of $vec(a), vec(b)$
+  respectively. If the polynomials are equal, then the coefficients, which
+  represent each element in the list, are equal. By Schwartz-Zippel, the
+  probability of the check passing, given that the claim does not hold is
+  $frac(style: "horizontal",  n, |Fb|)$.
 ]
 
-#theorem[
+#lemma[
   If a prover holds two multisets and wishes to prove that they're equal:
 
   $
@@ -273,16 +274,17 @@ proving tuple equality. The two lemmas below handle each of these cases:
 ]<thm:multiset-equality-proof>
 
 #proof[
-  Completeness is trivial. As for soundness. We can interpret each side of
-  the equality as a polynomial variable in $beta$:
+  Completeness is trivial since two grand products of equal values are
+  equal. As for soundness: we can interpret each side of the equality as a
+  polynomial variable in $beta$:
 
   $
     p(X) &= product_(vec(b) in bits^(ceil(lg(n)))) tilde(f)(vec(b)) - X \
     q(X) &= product_(vec(b) in bits^(ceil(lg(n)))) tilde(g)(vec(b)) - X \
   $
 
-  Then by Schwarz-Zippel, if we consider $e(X) = p(X) - q(X)$ then $e(beta)
-  = 0$ implies that $p = q$ with probability $frac(style:"horizontal", n,
+  Then by Schwartz-Zippel, if we consider $e(X) = p(X) - q(X)$ then $e(beta)
+  = 0$ implies that $p = q$ with probability $1 - frac(style:"horizontal", n,
   |Fb|)$. Now, we just need to prove that $p = q ==> { a_1, dots,
   a_n } = { b_1, dots, b_n }$.
 
@@ -464,7 +466,7 @@ timestamp polynomials:
 
 #let MemoryInTheHead = [#smallcaps("MemoryInTheHead")]
 #pseudocode(title: "MemoryInTheHead", args: ($M$,), [
-  + *Let* $m$ be the dimensions of the matrix $M in Fb^(m times m)$
+  + *Let* $m$ denote the dimensions of the matrix $M in Fb^(m times m)$
   + *Let* $vec(auditTS)_row = "vec!"[0; m], vec(auditTS)_col = "vec!"[0; m]$
   + *Let* $vec(readTS)_row = [ #h(0.5em) ], vec(readTS)_col = [ #h(0.5em) ]$
   + *For* $(i, j) in ([0..m], [0..m])$*:*
@@ -498,14 +500,14 @@ construct the SPARK sparse polynomial commitment scheme.
 ])
 
 #pseudocode(title: "SPARK.Open", args: ($pp$, $tilde(M)$, $C$, $(m, n)$, $vec(r)$), [
-  + *Let* $(vec(zeta), vec(gamma)) = vec(r)$, where $vec(zeta), vec(gamma) in Fb^(frac(style: "horizontal", ceil(lg(m)), 2))$.
+  + *Let* $(vec(zeta), vec(gamma)) = vec(r)$, where $vec(zeta), vec(gamma) in Fb^(lg(m)), vec(r) in Fb^(2lg(m))$.
   + *Let* $(tilde(val), tilde(row), tilde(col))$ denote the sparse representation of $tilde(M)$ as described in text.
   + *Prover:*
     + $vec(e)_row := [eq_vec(zeta)(row(0)), ..., eq_vec(zeta)(row(n-1))]$
     + $vec(e)_col := [eq_vec(gamma)(col(0)), ..., eq_vec(gamma)(col(n-1))]$
     + $C_(e_row) <- PCCommit(pp, tilde(e_row))$.
     + $C_(e_col) <- PCCommit(pp, tilde(e_col))$.
-    + Send $C_(r_row), C_(r_col)$ to $verifier$
+    + Send $C_(e_row), C_(e_col)$ to $verifier$
   + Apply the Specialized GKR protocol as described in the previous subsection
     to prove the correctness of $tilde(e)_row, tilde(e)_col$. Then use
     sumcheck to prove:

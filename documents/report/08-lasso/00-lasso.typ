@@ -36,7 +36,7 @@ equality check already implies read-consistency regardless of the committed
 timestamps. The key to this result is the local counter trick we adopted
 for optimization purposes (see @ex:global-timestamps-vs-counters).
 
-#lemma(title: "Read-Consistency for Read-Only Memory")[
+#theorem(title: "Read-Consistency for Read-Only Memory")[
   Let $T$ be a memory array, $k$ the number of reads and $N$ the size of
   the memory. Assume that $k <= |Fb|, N <= |Fb|$. If the verifier enforces
   the multi-set equality check from @eq:omc-set-check using local counters
@@ -115,14 +115,14 @@ that we would be reading from a memory of size $m^2$, and the resulting
 memory-checking argument would take time $O(n + m^2)$, ruining our hopes
 for a sparse polynomial commitment scheme. Luckily, we were able to decompose
 $eq$ using the identity:
-
+broadly
 $ eq(vec(x) || vec(y), row(vec(b)) || col(vec(b))) = eq(vec(x), row(vec(b))) dot eq(vec(y), col(vec(b))) $
 
-A key insight of Lasso was that this trick is actually generally
-useful. Suppose we wanted to construct a lookup argument of bitwise-XOR, and
-suppose we wanted to perform this lookup on two unreasonably large values of
-two 64-bit values giving us a truth-table of size $2^128$. This table would of
-course be way too large to ever concretely instantiate or especially commit to.
+A primary insight of Lasso was that this trick is broadly useful. Suppose we
+wanted to construct a lookup argument of bitwise-XOR, and suppose we wanted
+to perform this lookup on two unreasonably large values of two 64-bit values
+giving us a truth-table of size $2^128$. This table would of course be way
+too large to ever concretely instantiate or especially commit to.
 
 But bitwise-XOR is exactly just that, bitwise, and this means that this table
 too, is _decomposable_. Instead of a single lookup in a table of size $2^128$
@@ -184,7 +184,7 @@ this line of thought, we could already start constructing an interactive
 argument. We simply perform $c$ offline memory checks as in @sec:spark,
 then let the verifier recompose using $g$.
 
-But Lasso has one more trick up its sleeve, using Spark, we can actually
+But Lasso has one more trick up its sleeve: using Spark, we can actually
 batch $k$ arguments into one. In general, we can view a lookup operation
 as a simple matrix-vector multiplication:
 

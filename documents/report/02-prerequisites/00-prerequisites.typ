@@ -34,13 +34,13 @@ Throughout this document we use the following notation:
   [$bits = { 0, 1 }$],
   [A boolean or bit.],
   // Multivariate Polynomial
-  [$f(x_1, ..., x_n) = f(x in Fb^n)$],
+  [$f(x_1, ..., x_n) = f(vec(x))$],
   [A multivariate polynomial with $n$ variables.],
   // MLE
   [$tilde(f)$],
   [A multilinear extension of the function $f$.],
   // Lookup table
-  [$hat(f) in bits^n -> Fb$],
+  [$hat(f) : bits^n -> Fb$],
   [A lookup table.],
 )
 ]
@@ -100,10 +100,10 @@ now define the property more formally:
 #let View = "View"
 
 - *Zero-Knowledge:* For every PPT verifier $V^*$, there exists a PPT
-  simulator $S$ such that for every $x in L$ and auxiliary input $z in
-  bits^*$, the transcripts produced by $S$ are indistinguishable from
-  the interaction between any verifier and an honest prover:
-  $ S(x, z) tilde View(lr(chevron.l prover(x), verifier^*(z) chevron.r)) $
+  simulator $S$ such that for every $x in L$, the transcripts produced by
+  $S$ are indistinguishable from the interaction between any verifier and
+  an honest prover:
+  $ S(x) tilde View(lr(chevron.l prover(x), verifier^* chevron.r)) $
 
 Where $(tilde)$ denotes indistinguishability. The flavor of Zero-Knowledge
 depends on the indistinguishability of the transcripts.
@@ -120,14 +120,14 @@ depends on the indistinguishability of the transcripts.
   - _Computationally indistinguishable_ $(tilde^C)$ if no probabilistic polynomial-time
     distinguisher $Ac$ can tell them apart with more than negligible advantage,
     though an unbounded adversary might:
-    $ forall x : abs(Pr[Ac(x) -> D_1] - Pr[Ac(x) = D_2]) <= negl(lambda) $
+    $ forall x : abs(Pr[Ac(x) = D_1] - Pr[Ac(x) = D_2]) <= negl(lambda) $
 ]
 
 There are generally three types of Zero-Knowledge:
 
-- *Perfect Zero-Knowledge:* $S(x, z) tilde^P View(lr(chevron.l prover(x), verifier^*(z) chevron.r))$.
-- *Statistical Zero-Knowledge:* $S(x, z) tilde^S View(lr(chevron.l prover(x), verifier^*(z) chevron.r))$.
-- *Computational Zero-Knowledge:* $S(x, z) tilde^C View(lr(chevron.l prover(x), verifier^*(z) chevron.r))$.
+- *Perfect Zero-Knowledge:* $S(x) tilde^P View(lr(chevron.l prover(x), verifier^* chevron.r))$.
+- *Statistical Zero-Knowledge:* $S(x) tilde^S View(lr(chevron.l prover(x), verifier^* chevron.r))$.
+- *Computational Zero-Knowledge:* $S(x) tilde^C View(lr(chevron.l prover(x), verifier^* chevron.r))$.
 
 == SNARKS
 
@@ -171,9 +171,9 @@ received the commitment, and the receiving party can compute the commitment
 themselves and compare to the previously received commitment.
 
 Pedersen commitments@pedersen are an instance of a highly useful type of
-commitment scheme. One of the reasons of its usefulness is due to fact that
-it's a _homomorphic commitment scheme_. Specifically, Pedersen commitments
-are additively homomorphic, meaning:
+commitment scheme. This is largely because it's a _homomorphic commitment
+scheme_. Specifically, Pedersen commitments are additively homomorphic,
+meaning:
 
 $
   CMCommit(m_1) + CMCommit(m_2) = CMCommit(m_1 + m_2)
@@ -210,7 +210,7 @@ assumptions.
   Reference String for the KZG commitment scheme@kzg. This would give you
   a traditional SNARK.
 - *Bulletproofs PCSs:* Uses an untrusted setup, which is secure assuming the
-  Discrete Log problem is hard, the verifier is linear.
+  Discrete Log problem is hard, but the verifier is linear in the circuit size.
 - *FRI PCSs:* Also uses an untrusted setup, assumes secure one way functions
   exist. It has a higher constant overhead than PCSs based on the Discrete
   Log assumption, but because it only assumes that secure one-way functions
@@ -220,7 +220,7 @@ A PCS allows a prover to prove to a verifier that a committed polynomial
 evaluates to a certain value, $v$, given an evaluation input $z$. There
 are four main functions used to prove this:
 
-- $PCSetup(lambda, D)^rho -> ppPC$
+- $PCSetup(lambda, D) -> ppPC$
 
   The setup routine. Given security parameter $lambda$ in unary and a maximum
   degree bound $D$. Creates the public parameters $ppPC$.
@@ -230,13 +230,13 @@ are four main functions used to prove this:
   Commits to a degree-$d'$ polynomial $p$ with degree bound $d$ where $d'
   <= d$.
 
-- $PCOpen^(rho)(p in Fb^(d')[X], C in Commit, d in Nb, z in Fb) -> EvalProof$
+- $PCOpen(p in Fb^(d')[X], C in Commit, d in Nb, z in Fb) -> EvalProof$
 
   Creates a proof, $pi in EvalProof$, that the degree $d'$ polynomial $p$,
   with commitment $C$, and degree bound $d$ where $d' <= d$, evaluated at
   $z$ gives $v = p(z)$.
 
-- $PCCheck^(rho)(C in Commit, d in Nb, z in Fb, v in Fb, pi in EvalProof) -> bits$
+- $PCCheck(C in Commit, d in Nb, z in Fb, v in Fb, pi in EvalProof) -> bits$
 
   Checks the proof $pi$ that claims that the degree $d'$ polynomial $p$,
   with commitment $C$, and degree bound $d$ where $d' <= d$, evaluates to
@@ -246,7 +246,7 @@ Any NP-problem, $X in "NP"$, with a witness $w$ can be compiled into a
 circuit $R_X$. This circuit can then be fed to a general-purpose proof scheme
 prover $prover_X$ along with the witness and public input $(x, w) in X$, that
 creates a proof of the statement $R_(X)(x, w) = top$. Simplifying slightly,
-they typically consists of a series of tuples representing opening proofs:
+they typically consist of a series of tuples representing opening proofs:
 
 $ (q_1 = (C_1, d, z_1, v_1, pi_1), ..., q_m = (C_m, d, z_m, v_m, pi_m)) $
 
@@ -270,15 +270,14 @@ A PCS has soundness and completeness properties, as well as a binding property:
   #prob-game(
     $
       deg(p) <= d <= D, \
-      PCCheck^rho (C, d, z, v, pi) = 1
+      PCCheck (C, d, z, v, pi) = 1
     $,
     $
-      rho           &<- cal(U)(lambda) \
-      ppPC          &<- PCSetup^rho (1^lambda, D), \
-      (p, d, z) &<- cal(A)^rho (ppPC), \
+      ppPC          &<- PCSetup(1^lambda, D), \
+      (p, d, z)     &<- cal(A) (ppPC), \
       v             &<- p(z), \
-      C             &<- PCCommit^rho (p, d), \
-      pi            &<- PCOpen^rho (p, C, d, z)
+      C             &<- PCCommit(p, d), \
+      pi            &<- PCOpen(p, C, d, z)
     $,
     $= 1$
   )
@@ -292,16 +291,15 @@ A PCS has soundness and completeness properties, as well as a binding property:
   extractor $cal(E)$ such that the following holds:
   #prob-game(
     $
-      PCCheck^rho (C, d, z, v, pi) = 1 \
+      PCCheck(C, d, z, v, pi) = 1 \
       arrow.b.double \
-      C = PCCommit^rho (p, d) \
+      C = PCCommit(p, d) \
       v = p(z), thin deg(p) <= d <= D
     $,
     $
-      rho               &<- cal(U)(lambda) \
-      ppPC              &<- PCSetup^rho (1^lambda, D) \
-      (C, d, z, v, pi)  &<- cal(A)^rho (ppPC) \
-      (p)        &<- cal(E)^rho (ppPC) \
+      ppPC              &<- PCSetup(1^lambda, D) \
+      (C, d, z, v, pi)  &<- cal(A)(ppPC) \
+      (p)        &<- cal(E)(ppPC) \
     $,
     $>= 1 - negl(lambda)$
   )
@@ -326,9 +324,8 @@ A PCS has soundness and completeness properties, as well as a binding property:
       C_1 = C_2
     $,
     $
-      rho                       &<- cal(U)(lambda) \
-      ppPC                      &<- PCSetup^rho (1^lambda, D) \
-      (p_1, p_2, d) &<- cal(A)^rho (ppPC) \
+      ppPC                      &<- PCSetup(1^lambda, D) \
+      (p_1, p_2, d)             &<- cal(A)(ppPC) \
       C_1                       &<- PCCommit(p_1, d) \
       C_2                       &<- PCCommit(p_2, d) \
     $,

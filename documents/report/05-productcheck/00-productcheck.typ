@@ -60,7 +60,7 @@ $
 
 But what about round zero? Well, since round zero is always only a single
 gate, the prover/verifier pair doesn't need to perform a sumcheck at all. The
-prover can simply send $m_0 in bits$, the output of the circuit, along with the
+prover can simply send $m_0 in Fb$, the output of the circuit, along with the
 evaluations of $tilde(W)_1(0), tilde(W)_1(1)$. Since checking these
 evaluations recursively is already round one's job, we're still good:
 
@@ -160,7 +160,7 @@ is still outlined below:
       m_i &meq &&tilde("eq")_(0)(vec(r)_1) dot v^((1))_0 dot v^((1))_1 + \
           &    &&alpha dot tilde("eq")_(1)(vec(r)_1) dot v^((1))_0 dot v^((1))_1
     $)
-    edge(P, V, "->", $v^((0))_0, v^((0))_1$)
+    edge(P, V, "->", $v^((1))_0, v^((1))_1$)
     P.at(1) += h/2.4; M.at(1) += h/2.4; V.at(1) += h/2.4; 
 
     // -------------------- Round i -------------------- //
@@ -187,12 +187,12 @@ is still outlined below:
     edge(V, P, "->", $alpha$)
     P.at(1) += h/2.0; M.at(1) += h/2.0; V.at(1) += h/2.0; 
 
-    edge(P, V, "<->", $sum_(vec(b), vec(c) in bits^i) f^(i)(vec(b)) meq m_i$)
+    edge(P, V, "<->", $sum_(vec(b) in bits^i) f_(i)(vec(b)) meq m_i$)
     P.at(1) += h/2.0; M.at(1) += h/2.0; V.at(1) += h/2.0;
 
     node(M, inset: 0em, zero-width-box(text(theme.fg2)[
       At the end of the protocol, $prover$ sends $verifier$ the evaluations
-      of $tilde(W)_(2)(vec(r)_i || 0)$ and $tilde(W)_(2)(vec(r)_i ||
+      of $tilde(W)_(i+1)(vec(r)_i || 0)$ and $tilde(W)_(i+1)(vec(r)_i ||
       0)$, so $verifier$ can make the final check in the sumcheck protocol:
     ]))
     P.at(1) += h/1.2; M.at(1) += h/1.2; V.at(1) += h/1.2;
@@ -216,7 +216,7 @@ is still outlined below:
 
     node(M, inset: 0em, zero-width-box(text(theme.fg2)[
       At the input layer $d$, $verifier$ has two claims. $verifier$ constructs
-      $tilde(W)_d$ from $vec(w)$ and perform a final check.
+      $tilde(W)_d$ from $vec(w)$ and performs a final check.
     ]))
     P.at(1) += h/1.5; M.at(1) += h/1.5; V.at(1) += h/1.5; 
 
@@ -230,7 +230,7 @@ is still outlined below:
 == Efficiency
 
 We reuse the same trick as in @cor:linear-mle, by computing tables for
-each term and product in the sumcheck polynomials in and using them to
+each term and product in the sumcheck polynomials and using them to
 evaluate $f_(i)$ in round $j$ of the sumcheck protocol. Crucially, we
 need to construct the tables required to evaluate $f_(i)$ in round $j$
 of the sumcheck protocol in $O(2^(i-j))$ time.
@@ -242,7 +242,7 @@ we want to evaluate $f_(i)$ at $vec(x) = ( r_1, ..., r_j, t,
 b_(j+2), ..., b_(s_i) )$, with $t = {0, 1, 2, 3}$:
 
 $
-  f_(i)(vec(x)) &= (tilde("eq")_((vec(r)_(i-1) || 0))(vec(x)) + alpha dot tilde("eq")_((vec(r)_(i-1) || 1))(vec(x))) dot tilde(W)_(i+1)(vec(vec(x))) dot tilde(W)_(i+1)(vec(vec(x)))
+  f_(i)(vec(x)) &= (tilde("eq")_((vec(r)_(i-1) || 0))(vec(x)) + alpha dot tilde("eq")_((vec(r)_(i-1) || 1))(vec(x))) dot tilde(W)_(i+1)(vec(x) || 0) dot tilde(W)_(i+1)(vec(x) || 1)
 $
 
 Let $vec(v) = vec(r)_(i-1) || 0$ for $tilde("eq")_((vec(r)_(i-1) || 0))$, $vec(v)
@@ -260,7 +260,7 @@ time. Then in round $j$, $prover$ can compute the evaluation table of
 $tilde("eq")^((j))_vec(v)$ using the following recurrence:
 
 $
-  hat("eq")_(j)[(b_(j+1), ..., b_(ell))] = v_j^(-1) dot hat("eq")_(j-1)[(1, b_(j+1), ..., b_(ell))] dot v_j r_j + (1 - v_j) (1 - r_j)
+  hat("eq")_(j)[(b_(j+1), ..., b_(ell))] = v_j^(-1) dot hat("eq")_(j-1)[(1, b_(j+1), ..., b_(ell))] dot (v_j r_j + (1 - v_j) (1 - r_j))
 $<eq:eq-hat>
 
 #remark[
@@ -302,7 +302,7 @@ $
   hat(W)_(j)[(x_(j+1), ..., x_ell)] = tilde(W)_(i+1)(r_1, ..., r_j, x_(j+1), ..., x_ell)
 $<eq:w-lookup-base-case>
 
-Assuming $prover$ already have $hat(W)_(j-1)$, they can compute $hat(W)_(j)$:
+Assuming $prover$ already has $hat(W)_(j-1)$, they can compute $hat(W)_(j)$:
 
 $
   hat(W)_(j)[(x_(j+1), ..., x_ell)] := tilde("eq")_0(r_j) dot hat(W)_(j-1)[(0, x_(j+1), ..., x_ell)] + tilde("eq")_1(r_j) dot hat(W)_(j-1)[(1, x_(j+1), ..., x_ell)]
@@ -312,7 +312,7 @@ In $O(2^(ell-j)) = O(2^(i+1-j)) = O(2^(i-j))$ time.
 
 *Using the lookup table:*
 
-Once the prover has a $hat(W)_(j-1)$ lookup table, they can compute $tilde("W")^((j-1))(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell))$:
+Once the prover has a $hat(W)_(j-1)$ lookup table, they can compute $tilde(W)^((j-1))(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell))$:
 
 $
   tilde(W)(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell)) &= &&sum_(vec(b) in bits^ell) tilde("eq")(r_1, ..., r_(j-1), t, x_(j+1), ..., x_(ell), vec(b)) dot W_(i+1)(vec(b)) \

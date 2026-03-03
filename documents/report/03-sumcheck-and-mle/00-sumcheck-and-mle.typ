@@ -7,14 +7,11 @@
 
 == Multilinear Extensions<sec:mle>
 
-Multilinear are incredibly useful tools for proof systems. One important
-aspect is that they allow us to model any function from bitstrings to field
-elements as polynomials:
-
-$ f : bits^ceil(lg(n)) -> Fb $
-
-This also includes vectors, we can model a vector with length $n$, consisting
-of field elements, using such a function:
+Multilinear extensions are incredibly useful tools for proof systems. One
+important aspect is that they allow us to model any function $f :
+bits^ceil(lg(n)) -> Fb$ from bitstrings to field elements as polynomials. This
+also includes vectors: we can model a vector with length $n$, consisting of
+field elements, using such a function:
 
 $ forall i in [1..n] : vec(v)_i = f(toBits(i)) $
 
@@ -28,7 +25,7 @@ $ forall i in [1..n] : vec(v)_i = f(toBits(i)) $
   $ f(#b(00)) = 8, #h(2em) f(#b(01)) = 1, #h(2em) f(#b(10)) = 2, #h(2em) f(#b(11)) = 8  $
 ]
 
-In general, given any function $f(vec(x)) in bits^ell -> Fb$, we can create
+In general, given any function $f(vec(x)) : bits^ell -> Fb$, we can create
 an extension polynomial $tilde(f)(vec(x))$ such that $forall vec(b)
 in bits^ell : tilde(f)(vec(b)) = f(vec(b))$ using Lagrange interpolation:
 
@@ -40,7 +37,7 @@ $ tilde("eq")_vec(x)(vec(b)) := product^ell_(i=1) x_i b_i + (1 - x_i) (1 - b_i) 
 
 This is presented and proved as Fact 3.5 in Thaler's book@thaler-book. These
 multilinear extension polynomials allow us to encode functions, and by
-extension, vectors too as polynomials. Then using Schwartz-Zippel from
+extension vectors too, as polynomials. Then using Schwartz-Zippel from
 @sec:schwartz-zippel, we can succinctly prove desirable properties about
 these functions. All proof systems presented in this document follow this
 methodology.
@@ -53,11 +50,11 @@ $f(vec(x))$ and such an MLE is always denoted using a tilde in this document.
 It's clear that evaluating $tilde("eq")(vec(x), vec(y))$ naively would take
 $O(ell)$ time, and thus, it would take $O(2^ell dot ell)$ time to evaluate
 $tilde(f)$. If we want to remove this $ell$ factor, we can make use of
-Dynamic Programming, by computing a lookup table of $eq$ in $O(ell)$ time.
+Dynamic Programming, by computing a lookup table of $eq$ in $O(2^ell)$ time.
 
 #lemma[
   An evaluation table, $hat("eq")_(vec(x))(vec(b))$, for the equality function
-  $tilde("eq")_vec(x)(vec(b)) : bits^ell -> bits$, with a fixed $vec(x)$
+  $tilde("eq")_vec(x)(vec(b)) : bits^ell -> Fb$, with a fixed $vec(x)$
   can be computed in time $O(2^ell)$ using $O(2^ell)$ space.
 ]<lem:linear-eq>
 
@@ -67,7 +64,7 @@ Dynamic Programming, by computing a lookup table of $eq$ in $O(ell)$ time.
   $
     hat("eq")_(vec(x))^((1))(vec(b) in bits^1) &= (x_1 b_1 + (1 - x_1) (1 - b_1)) \
     hat("eq")_(vec(x))^((k))(vec(b) in bits^k) &= hat("eq")_vec(x)^((k-1))((b_(1), dots, b_(k-1))) dot (x_k b_k + (1 - x_k) (1 - b_k)) \
-    hat("eq")_(vec(x))(vec(b) in bits^ell) &= hat("eq")_vec(x)^((k))(vec(b)) \
+    hat("eq")_(vec(x))(vec(b) in bits^ell) &= hat("eq")_vec(x)^((ell))(vec(b)) \
   $<eq:prereq-eq-hat>
 
   We first trivially construct $hat("eq")_(vec(x))^(1)(vec(b))$ in
@@ -97,10 +94,10 @@ Then we can compute the evaluation of any $tilde(f)(vec(x))$ by utilizing
 
 $ tilde(f)(vec(x)) := sum_(vec(b) in bits^ell) f(vec(b)) dot hat("eq")_(vec(x))(vec(b)) $
 
-By first computing the evaluation table for $eq_vec(x)$ in $O(2^ell)$ time
-and space and then looking up the each value in the above sum $vec(b)$ in
-the two tables $eq_vec(x), f$ in constant time. A sum of $ell$ constant-time
-operations takes $O(ell)$ time.
+This is done by first computing the evaluation table for $eq_vec(x)$ in
+$O(2^ell)$ time and space and then looking up each value in the above sum
+$vec(b)$ in the two tables $eq_vec(x), f$ in constant time. A sum over $2^ell$
+constant-time operations takes $O(2^ell)$ time.
 
 #corollary[
   For any function $f(vec(x)) in bits^ell -> Fb$, its multilinear extension
@@ -135,7 +132,7 @@ $
 
 Along with a degree check that $deg(g_1) meq deg_1(g)$. The rest of the
 rounds proceed in a similar manner, until the final round, where $verifier$
-also need to additionally check that $g_(ell)(r_ell) meq g(vec(r))$.
+also needs to additionally check that $g_(ell)(r_ell) meq g(vec(r))$.
 
 *Soundness and Completeness:*
 
@@ -143,7 +140,7 @@ The protocol is both sound and complete, with completeness error of $delta_c =
 0$ and a soundness error of $delta_s <= frac(style:"skewed", ell dot d, |Fb|)$. Here $d$ is the
 degree bound of each univariate polynomial sent in the protocol, i.e. $forall i
 in [1.. ell] : deg(g_i) <= d$. A proof can be seen in @thaler-book Proposition
-4.1
+4.1.
 
 *Efficiency:*
 
@@ -227,7 +224,7 @@ The entire sumcheck protocol can be seen below:
     P.at(1) += h; M.at(1) += h; V.at(1) += h; 
 
     node(P, move(dy: .35em, $ g_(ell)(X) := g(vec(r)_(1:ell-1), X)$))
-    node(V, $ g_(ell-1)(r_(j-1)) meq g_(ell)(0) + g_(ell)(1)$)
+    node(V, $ g_(ell-1)(r_(ell-1)) meq g_(ell)(0) + g_(ell)(1)$)
     edge(P, V, "->", $g_(ell)(X)$)
     P.at(1) += h; M.at(1) += h; V.at(1) += h; 
 

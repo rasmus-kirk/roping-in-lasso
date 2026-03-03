@@ -6,7 +6,7 @@
 
 Lookup arguments allow a prover to convince a verifier that a set of values
 all appear in some predetermined table, without the verifier inspecting
-each entry. This is a useful tool, many desirable operations in a SNARK
+each entry. This is a useful tool; many desirable operations in a SNARK
 circuit, such as range checks and bitwise operations, are expensive to
 express as primitive arithmetic constraints but trivial to verify via table
 lookup. Early lookup arguments required the prover to commit to the full
@@ -17,8 +17,8 @@ machine (zkVM) that proves correct execution for RISC-V programs via
 large table lookups, drastically reducing complexity and prover costs
 compared to earlier zkVMs. Lasso's core contribution was that many tables
 of interest are _decomposable_, meaning that a lookup into a table of size
-$N$ can be replaced by $c$ lookups into sub-tables of size $N^frac(style:
-"horizontal", 1, c)$.
+$N$ can be replaced by $c$ lookups into sub-tables of size $N^(frac(style:
+"horizontal", 1, c))$.
 
 The lookups into these sub-tables are based on the same machinery that
 drives Spark, the sparse polynomial commitment scheme, employed by
@@ -29,13 +29,13 @@ concretely feasible.
 
 This document presents the constructions that Lasso builds on, introducing
 them within this single mostly self-contained reference, before arriving
-at Lasso itself. We assume knowledge with basic algebra (finite fields,
+at Lasso itself. We assume knowledge of basic algebra (finite fields,
 polynomials) and basic familiarity with proof systems. These priors are
 very briefly discussed in @sec:prerequisites.
 
 The structure is as follows:
 
-- @sec:sumcheck-and-mle briefly introduce multilinear extensions and
+- @sec:sumcheck-and-mle briefly introduces multilinear extensions and
   the sumcheck protocol, the building blocks underlying all other protocols
   in this document. If these short expositions are insufficient, the reader
   is encouraged to consult Justin Thaler's book@thaler-book.
@@ -56,5 +56,5 @@ The structure is as follows:
   entries honestly.
 - @sec:lasso finally presents the Lasso lookup argument itself.
 
-If the reader is already comfortable with sumcheck, MLE's and the GKR
-protocol, feel free to start from @sec:spartan.
+If the reader is already comfortable with sumcheck, multilinear extensions
+and the GKR protocol, feel free to start from @sec:spartan.
