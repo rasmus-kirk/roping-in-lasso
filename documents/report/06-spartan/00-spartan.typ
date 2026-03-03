@@ -336,7 +336,7 @@ $ g_2(vec(x)) = ( tilde(A)(vec(zeta), vec(x)) + alpha dot tilde(B)(vec(zeta), ve
   By applying this algorithm to matrices $A, B$, and $C$, the prover computes
   $hat(A), hat(B), hat(C)$ in time $O(n + m)$ each. Since we have lookup tables
   for all terms in the sumcheck, we can once again apply the techniques from
-  @sec:specialized-gkr to get a linear-time prover ($O(n + m)$).
+  @sec:productcheck to get a linear-time prover ($O(n + m)$).
 ]
 
 While the prover can compute the sumcheck efficiently, a problem arises in the final

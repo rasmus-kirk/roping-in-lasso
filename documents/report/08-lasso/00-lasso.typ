@@ -47,7 +47,7 @@ for optimization purposes (see @ex:global-timestamps-vs-counters).
 #proof[
     First, let the initial state of the memory be defined as:
 
-    $ Init = { (i, vec(RAM)[i], 0) }_(i=0)^m $
+    $ Init = { (i, vec(RAM)[i], 0) }_(i=0)^N $
 
     Which is enforced by the verifier.
   
@@ -92,13 +92,14 @@ multi-set check passing, but this can only happen if $Audit$ is well-formed.
 
 Suppose we wanted to prove a lookup into a table to a verifier. One way of
 viewing this is with a single read of a read-only RAM. Suppose the table
-is of size $N$, we could use memory-checking techniques to prove this.
-But imagine that this memory was extremely large, such as $2^128$. In this
-case the instantiated memory from the offline memory checking would also be
-$2^128$, far too large to instantiate in an interactive argument. We can use
-the same trick as was employed in Spark however, recall that in that case,
-we wanted to evaluate the multilinear extension of $M$. We did so using two
-$eq$ polynomials, but what would happen if we used the natural MLE of $M$?
+is of size $N$ and that $N$ is a power of two, we could use memory-checking
+techniques to prove this. But imagine that this memory was extremely large,
+such as $2^128$. In this case the instantiated memory from the offline
+memory checking would also be $2^128$, far too large to instantiate in an
+interactive argument. We can use the same trick as was employed in Spark
+however, recall that in that case, we wanted to evaluate the multilinear
+extension of $M$. We did so using two $eq$ polynomials, but what would happen
+if we used the natural MLE of $M$?
 
 $ tilde(M)(vec(x), vec(y)) = sum_(vec(a), vec(b) in bits^ceil(lg(m))) M(vec(a), vec(b)) dot eq(vec(x) || vec(y), vec(a) || vec(b)) $
 
@@ -191,13 +192,13 @@ then let the verifier recompose using $g$.
 // memory-checking techniques from @sec:spark).
 
 But Lasso has one more trick up its sleeve, using Spark, we can actually
-batch $m$ arguments into one.  In general, we can view a lookup operation
+batch $k$ arguments into one. In general, we can view a lookup operation
 as a simple matrix-vector multiplication:
 
 $ vec(M) vec(t) = vec(a) $
 
 Where $vec(t)$ is our table of size $N$, $vec(a)$ is our vector of $m$ lookup
-results, and $vec(M)$ is an $m times N$ sparse matrix where each row has
+results, and $vec(M)$ is an $k times N$ sparse matrix where each row has
 exactly one $1$ corresponding to the accessed index.
 
 #example(title: "Matrix-Vector Lookup for 1-bit XOR")[
@@ -230,18 +231,18 @@ We can of course use the usual methods to convert this to a polynomial form:
 
 $ tilde(M)(vec(x), vec(y)) dot tilde(t)(vec(y)) = tilde(a)(vec(x)) $
 
-Where $vec(x) in bits^ceil(lg(N)), vec(y) in bits^ceil(lg(m))$. We now
-wish to establish that the above equality holds, which we can of course use
-Schwartz-Zippel for. This means the verifier wants to check the evaluation
-$tilde(a)(vec(r))$ at some random point $vec(r) in bits^ceil(lg(m))$ equals:
+Where $vec(x) in bits^lg(N), vec(y) in bits^lg(k)$. We now wish to establish
+that the above equality holds, which we can of course use Schwartz-Zippel
+for. This means the verifier wants to check the evaluation $tilde(a)(vec(r))$
+at some random point $vec(r) inrand bits^lg(k)$ equals:
 
-$ tilde(a)(vec(r)) meq sum_(vec(y) in bits^ceil(lg(m))) tilde(M)(vec(r), vec(y)) dot tilde(t)(vec(y)) = tilde(a)(vec(x)) $<eq:lol2>
+$ tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) tilde(M)(vec(r), vec(b)) dot tilde(t)(vec(b)) $<eq:lol2>
 
 Since there is only a single entry in $M$ which is nonzero, then the above
 expression is the same as:
 
 $
-  tilde(a)(vec(r)) meq sum_(vec(x) in bits^s) eq(vec(x), vec(b)) dot hat(T)[nz(vec(b))]
+  tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) eq(vec(r), vec(b)) dot hat(T)[nz(vec(b))]
 $<eq:lol1>
 
 Where $nz$ denotes the nonzero entry of each row of $vec(M)$. This follows
@@ -250,21 +251,111 @@ and agree on all points on the boolean hypercube.
 
 As previously established because the table $hat(T)$ is decomposable,
 we can replace $hat(T)[nz(vec(b))]$ with our recomposition function $g$
-applied to $c$ smaller sub-table lookups. Let $tilde(e)_i(vec(x))$ be the
-multilinear extension of the $m$ lookups into $hat(T)_i$. By substituting
+applied to $c$ smaller sub-table lookups. Let $tilde(e)_(i)(vec(x))$ be the
+multilinear extension of the $k$ lookups into $hat(T)_i$. By substituting
 in the recomposition function $g$, the identity collapses to:
 
-$ tilde(a)(vec(r)) = sum_(vec(b) in bits^s) eq(vec(r), vec(b)) dot g(tilde(e)_1(vec(b)), ..., tilde(e)_c(vec(b))) $
+$ tilde(a)(vec(r)) = sum_(vec(b) in bits^lg(k)) eq(vec(r), vec(b)) dot g(tilde(e)_1(vec(b)), ..., tilde(e)_(c)(vec(b))) $
 
 Once the $e_i$ sub-lookups are verified, the verifier simply runs a standard
-sum-check protocol over the $ceil(lg(m))$-variate boolean hypercube to
-check the claim:
+sum-check protocol over the $lg(k)$-variate boolean hypercube on the above
+sum, with the following sumcheck polynomial:
 
-$
-  sum_(vec(b) in bits^s) eq(vec(r), vec(b)) dot g(e_1(vec(b)), ..., e_(c)(vec(b)))
-$
+$ f_("Lasso")(vec(x)) := eq(vec(r), vec(x)) dot g(tilde(e)_1(vec(x)), ..., tilde(e)_(c)(vec(x))) $
 
 Assuming the verifying checks pass, this proves the correctness of the
 lookups into the massive table $hat(T)$.
 
-== Efficiency of the Lasso Lookup Argument
+== Efficiency of the Lasso Lookup Argument <sec:lasso-efficiency>
+
+*Prover Costs:*
+
+Assuming linear commitment costs in the number of variables (for MLE
+polynomials) of $O(n)$, the prover runtime is dominated by the following
+operations:
+
+#table(
+  columns: 5,
+  row-gutter: (auto, 2.2pt, auto, 2.2pt, auto, 2.2pt),
+  
+  [*Commitments:*], $tilde(nz)_1, ..., tilde(nz)_c$, $tilde(e)_1, ..., tilde(e)_c$, $tilde(readTS)_1, ..., tilde(readTS)_c$, $tilde(auditTS)_1, ..., tilde(auditTS)_c$,
+  [*Cost:*], $O(c dot k)$, $O(c dot k)$, $O(c dot k)$, $O(c dot N^(frac(style: "horizontal", 1, c)))$,
+  [*EvalProofs:*], $tilde(nz)_1, ..., tilde(nz)_c$, $tilde(e)_1, ..., tilde(e)_c$, $tilde(readTS)_1, ..., tilde(readTS)_c$, $tilde(auditTS)_1, ..., tilde(auditTS)_c$,
+  [*Cost:*], $O(c dot k)$, $O(c dot k)$, $O(c dot k)$, $O(c dot N^(frac(style: "horizontal", 1, c)))$,
+  [*Productchecks:*], $RS_1, ..., RS_c$, $WS_1, ..., WS_c$, $Init_1, ..., Init_c$, $Audit_1, ..., Audit_c$, 
+  [*Cost:*], $O(c dot k)$, $O(c dot k)$, $O(c dot N^(frac(style: "horizontal", 1, c)))$, $O(c dot N^(frac(style: "horizontal", 1, c)))$,
+  [*Sumchecks:*], $f_"Lasso"$, $$, $$, $$,
+  [*Cost:*], $O(c dot k)$,
+)
+
+For a total of:
+
+$ O((3 dot c dot k + c dot N^(frac(style: "horizontal", 1, c))) + (3 dot c dot k + c dot N^(frac(style: "horizontal", 1, c))) + (2 dot c dot k + 2 dot c dot N^(frac(style: "horizontal", 1, c))) + c dot k) $
+
+We can batch sumchecks, productchecks and evaluation proofs. These batching techniques follow
+trivially from Schwartz-Zippel. If you have $n$ sumchecks, all over $lg(k)$ variables:
+
+$ sigma_1 meq sum_(vec(b) in bits^lg(k)) f_1(vec(b)) and ... and sigma_n meq sum_(vec(b) in bits^lg(k)) f_(n)(vec(b)) $
+
+Then we can batch them using a uniformly random value $alpha inrand Fb$:
+
+$ sum_(i=1)^(n) alpha^(i-1) dot sigma_i meq sum_(vec(b) in bits^lg(k)) sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(b)) $
+
+The same holds for our productchecks. Since the productchecks only apply
+sumcheck in the same manner as the GKR protocol we can use the sumcheck
+batching technique on the sumcheck polynomials of the productcheck, as long
+as the grand products have the same number of entries.
+
+As for the evaluation proofs, consider the evaluations:
+
+$ v_1 = f_1(vec(zeta)), ..., v_n = f_n(vec(zeta)) $
+
+Proved correct using evaluation proofs, with corresponding commitments:
+
+$ C_1 = PCCommit(f_1, d), ..., C_n = PCCommit(f_n, d) $
+
+Then we could of course verify each on its own, with an assumed linear cost
+of $O(k)$ each, for a total cost of $O(n dot k)$:
+
+$ PCCheck(C_1, d, vec(zeta), v_1, pi_1) and ... and PCCheck(C_(n), d, vec(zeta), v_(n), pi_(n)) $
+
+But, assuming we have additively homomorphic commitments, the prover could
+also instead construct a batching polynomial $g$, using a uniformly random
+value $alpha$.
+
+$ g(vec(x)) = sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(x)) $
+
+Send the evaluation and proof for $g(vec(zeta))$ along with the evaluations
+$v_1, dots, v_n$. The verifier can then check whether:
+
+$ PCCheck(C_g, d, vec(zeta), g(vec(zeta)), pi_g) and g(vec(zeta)) meq sum_(i=1)^(n) alpha^(i-1) dot v_i $
+
+Which has only a $O(n)$ cost for the prover. Applying these batching
+techniques, the cost for the prover becomes:
+
+$ O((3 dot c dot k + c dot N^(frac(style: "horizontal", 1, c))) + (k + N^(frac(style: "horizontal", 1, c))) + (k + N^(frac(style: "horizontal", 1, c))) + c dot k) $
+
+Thus, the primary cost to the prover becomes the commitments, which is also
+why the Lasso paper primarily focuses on the commitment cost.
+
+*Verifier Cost:*
+
+Assuming that an evaluation proof takes $O(lg(n))$ in the number of
+variables. Let:
+
+$ lambda_(k) = lg^2(k) + lg(k), #h(2em) lambda_(N) = lg^2(N^(frac(style: "horizontal", 1, c))) + lg(N^(frac(style: "horizontal", 1, c))) $
+
+#table(
+  columns: 5,
+  row-gutter: (auto, 2.2pt, auto, 2.2pt, auto, 2.2pt),
+  [*EvalProofs:*], $tilde(nz)_1, ..., tilde(nz)_c$, $tilde(e)_1, ..., tilde(e)_c$, $tilde(readTS)_1, ..., tilde(readTS)_c$, $tilde(auditTS)_1, ..., tilde(auditTS)_c$,
+  [*Cost:*], $O(c dot lg(k))$, $O(c dot lg(k))$, $O(c dot lg(k))$, $O(c dot lg(N^(frac(style: "horizontal", 1, c))))$,
+  [*Productchecks:*], $RS_1, ..., RS_c$, $WS_1, ..., WS_c$, $Init_1, ..., Init_c$, $Audit_1, ..., Audit_c$, 
+  [*Cost:*], $O(c dot lambda_k)$, $O(c dot lambda_k)$, $O(c dot lambda_N)$, $O(c dot lambda_N)$,
+  [*Sumchecks:*], $f_"Lasso"$, $$, $$, $$,
+  [*Cost:*], $O(c + lg(k))$,
+)
+
+With batching this then becomes:
+
+$ O((lg(k) + lg(N^(frac(style: "horizontal", 1, c)))) + (lambda_k + lambda_N) + (c + lg(k))) $

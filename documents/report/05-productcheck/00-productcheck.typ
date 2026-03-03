@@ -3,15 +3,35 @@
 
 #show smallcaps: set text(font: "New Computer Modern")
 
-= A specialized GKR protocol <sec:specialized-gkr>
+= Productcheck - A Specialized GKR Protocol <sec:productcheck>
 
-If we consider GKR for a specific circuit, then we can improve both the
-runtime of the prover and verifier. Concretely, our goal is to end up with
-an IP of the statement $y meq product_(i=1)^n w_i$, i.e. that the grand
-product of the input values $vec(w)$ equals some value $y$. With a linear
-prover $O(n)$ and a sublinear verifier (except for the final round which
-takes $O(n)$ time) meaning that the verifier's runtime will be bounded by
-$O(lg^2(n) + n)$.
+We have already seen the power of the sumcheck protocol in the above section,
+but what if you wanted to prove a product rather than a sum?
+
+$ y meq product_(vec(b) in bits^lg(n)) w(vec(b)) $
+
+We will call this argument a _productcheck_, but it's also sometimes
+called a _Grand Product Argument_ in the literature. It was central to
+the Plonk@plonk proof system. However, for a grand product of $n$ values,
+the protocol presented in Plonk took $O(n dot lg(n))$ time for the prover
+whereas we desire a stricter bound of $O(n)$. Incredibly, this is achieved
+with a sumcheck, once again highlighting the utility and power of the protocol.
+
+If we consider GKR for a circuit of binary multiplication gates#footnote[You
+might reasonably wonder why not just replace the addition operation in sumcheck
+with a multiplication operation? The answer is that the degree of each $g_1,
+..., g_ell$ polynomial would blow up, destroying the succinctness of the
+argument.], i.e. a grand product, then we can bring down the runtime of both
+the prover and verifier to our desired bounds. With a linear prover $O(n)$
+and a sublinear verifier (except for the final round which takes $O(n)$
+time) meaning that the verifier's runtime will be bounded by $O(lg^2(n) +
+n)$. This was originally shown by Thaler in 2013@thaler-2013.
+
+The next couple of subsections show how to specialize GKR for this purpose
+and go into depth on how the prover is optimized. The primary purpose of
+this section is not just to show that it is possible, but concretely _how_
+it is possible. If you're happy to accept that such a GKR-protocol can be
+constructed, feel free to skip this section.
 
 == The Protocol
 

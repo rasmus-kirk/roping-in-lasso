@@ -3,7 +3,7 @@
 
 #show smallcaps: set text(font: "New Computer Modern")
 
-= Prerequisites
+= Prerequisites <sec:prerequisites>
 
 Throughout this document we use the following notation:
 
@@ -337,7 +337,7 @@ A PCS has soundness and completeness properties, as well as a binding property:
   In other words, the adversary cannot change the polynomial that he committed to.
 ]
 
-== The Schwartz-Zippel Lemma
+== The Schwartz-Zippel Lemma<sec:schwartz-zippel>
 
 The Schwartz-Zippel lemma is commonly used in succinct proof systems to test
 polynomial identities. Formally it states:

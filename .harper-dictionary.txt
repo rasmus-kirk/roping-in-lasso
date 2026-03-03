@@ -25,6 +25,8 @@ multisets
 notational
 polylogarithmic
 polynomially
+productcheck
+productchecks
 prover
 satisfiability
 sublinear

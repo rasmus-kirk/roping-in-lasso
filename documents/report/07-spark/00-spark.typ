@@ -318,7 +318,7 @@ the elements of the write set, are equal to some claimed value $h$:
 $ h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta) meq product_((a,v,t) in Init union WS) (a + alpha v + alpha^2 t - beta) $
 
 Which is an excellent use-case for the specialized GKR protocol from
-@sec:specialized-gkr, since it can efficiently prove the correctness of a
+@sec:productcheck, since it can efficiently prove the correctness of a
 product of field elements.
 
 == Putting the Pieces Together
@@ -414,7 +414,7 @@ $
 The polynomials $tilde(readTS)_row, tilde(auditTS)_row, tilde(readTS)_col$
 and $tilde(auditTS)_col$ are derived from running the Read algorithm in
 @fig:omc-verifier-procedure over all $n$ nonzero entries. Then, we can
-use the specialized Grand Product GKR protocol of @sec:specialized-gkr to
+use the specialized Grand Product GKR protocol of @sec:productcheck to
 verify each of the below grand products (shown for the row RAM; the column
 RAM is analogous):
 

@@ -3,11 +3,32 @@
 
 #show smallcaps: set text(font: "New Computer Modern")
 
-= Sumcheck and Multilinear Extensions
+= Sumcheck and Multilinear Extensions<sec:sumcheck-and-mle>
 
 == Multilinear Extensions<sec:mle>
 
-Given any function $f(vec(x)) in bits^ell -> Fb$, we can create
+Multilinear are incredibly useful tools for proof systems. One important
+aspect is that they allow us to model any function from bitstrings to field
+elements as polynomials:
+
+$ f : bits^ceil(lg(n)) -> Fb $
+
+This also includes vectors, we can model a vector with length $n$, consisting
+of field elements, using such a function:
+
+$ forall i in [1..n] : vec(v)_i = f(toBits(i)) $
+
+#example[
+  Take the vector with length $n = 4$:
+
+  $ vec(v) = [ 8,1,2,8 ] $
+
+  Then we can model this vector with the function $f : bits^lg(n) -> Fb$:
+
+  $ f(#b(00)) = 8, #h(2em) f(#b(01)) = 1, #h(2em) f(#b(10)) = 2, #h(2em) f(#b(11)) = 8  $
+]
+
+In general, given any function $f(vec(x)) in bits^ell -> Fb$, we can create
 an extension polynomial $tilde(f)(vec(x))$ such that $forall vec(b)
 in bits^ell : tilde(f)(vec(b)) = f(vec(b))$ using Lagrange interpolation:
 
@@ -17,16 +38,22 @@ Where:
 
 $ tilde("eq")_vec(x)(vec(b)) := product^ell_(i=1) x_i b_i + (1 - x_i) (1 - b_i) $
 
-This is presented and proved as Fact 3.5 in @thaler-book. Furthermore,
-this polynomial extension always has degree at most one in each variable
-and it is _unique_, a fact that we will use throughout the text. The polynomial
-$tilde(f)(vec(x))$ is said to be the multilinear extension (MLE) of $f(vec(x))$
-and such an MLE is always denoted using a tilde in this document.
+This is presented and proved as Fact 3.5 in Thaler's book@thaler-book. These
+multilinear extension polynomials allow us to encode functions, and by
+extension, vectors too as polynomials. Then using Schwartz-Zippel from
+@sec:schwartz-zippel, we can succinctly prove desirable properties about
+these functions. All proof systems presented in this document follow this
+methodology.
+
+Furthermore, such a polynomial extension always has degree at most one in each
+variable and it is _unique_, a fact that we will use throughout the text. The
+polynomial $tilde(f)(vec(x))$ is said to be the multilinear extension (MLE) of
+$f(vec(x))$ and such an MLE is always denoted using a tilde in this document.
 
 It's clear that evaluating $tilde("eq")(vec(x), vec(y))$ naively would take
-$O(ell)$ time, and thus, it would take $O(2^ell dot ell)$ time to compute
-$tilde(f)(vec(x))$. If we want to remove this $ell$ factor, we can make use
-of Dynamic Programming.
+$O(ell)$ time, and thus, it would take $O(2^ell dot ell)$ time to evaluate
+$tilde(f)$. If we want to remove this $ell$ factor, we can make use of
+Dynamic Programming, by computing a lookup table of $eq$ in $O(ell)$ time.
 
 #lemma[
   An evaluation table, $hat("eq")_(vec(x))(vec(b))$, for the equality function
@@ -70,6 +97,11 @@ Then we can compute the evaluation of any $tilde(f)(vec(x))$ by utilizing
 
 $ tilde(f)(vec(x)) := sum_(vec(b) in bits^ell) f(vec(b)) dot hat("eq")_(vec(x))(vec(b)) $
 
+By first computing the evaluation table for $eq_vec(x)$ in $O(2^ell)$ time
+and space and then looking up the each value in the above sum $vec(b)$ in
+the two tables $eq_vec(x), f$ in constant time. A sum of $ell$ constant-time
+operations takes $O(ell)$ time.
+
 #corollary[
   For any function $f(vec(x)) in bits^ell -> Fb$, its multilinear extension
   $tilde(f)(vec(x))$ can be computed using $O(2^ell)$ time and space.
@@ -108,7 +140,7 @@ also need to additionally check that $g_(ell)(r_ell) meq g(vec(r))$.
 *Soundness and Completeness:*
 
 The protocol is both sound and complete, with completeness error of $delta_c =
-0$ and a soundness error of $delta_s <= frac(ell d, |Fb|)$. Here $d$ is the
+0$ and a soundness error of $delta_s <= frac(style:"skewed", ell dot d, |Fb|)$. Here $d$ is the
 degree bound of each univariate polynomial sent in the protocol, i.e. $forall i
 in [1.. ell] : deg(g_i) <= d$. A proof can be seen in @thaler-book Proposition
 4.1
@@ -120,19 +152,19 @@ in [1.. ell] : deg(g_i) <= d$. A proof can be seen in @thaler-book Proposition
   $O(sum^ell_(j=1) deg_j(g(vec(x))))$.
 - *Verifier Runtime:* The verifiers runtime is proportional to the
   communication cost plus an additional evaluation of $g(vec(x))$, so
-  $O("Eval"_g + sum^ell_(j=1) deg_j(g(vec(x))))$.
+  $O("Eval"_g + sum^ell_(j=1) deg_(j)(g(vec(x))))$.
 - *Provers Runtime:* In each round, the prover must evaluate $g(vec(x))$
-  at $deg_j(g)+1$ points for each $2^(ell-j)$ term. This gives
-  $O(sum^(ell)_(j=1) deg_j(g) dot 2^(ell-j) dot T)$, where $T$ is the cost of
+  at $deg_(j)(g)+1$ points for each $2^(ell-j)$ term. This gives
+  $O(sum^(ell)_(j=1) deg_(j)(g) dot 2^(ell-j) dot T)$, where $T$ is the cost of
   a single evaluation of $g(vec(x))$. Usually $deg_(j)(g(vec(x)))$ is bounded
   by some constant, in which case the cost is $O(2^(ell) dot T)$, since
   $sum^(ell)_(j=1) 2^(ell-j) = 2^(ell)$.
 
 If the individual degree of $g(vec(x))$ is bounded, and $T$ is constant
 ($O(1)$) then the prover has a runtime of only $O(2^ell)$. Unfortunately,
-$T$ is rarely constant, but in @sec:specialized-gkr we give an example of
-an IP where this is the case, which lets us build an IP that proves that $y
-meq product_(w_i in vec(w)) w_i$ with a prover runtime linear in $|vec(w)|$.
+$T$ is rarely constant, but in @sec:productcheck we give an example of an
+IP where this is the case, which lets us build an IP that proves that $y meq
+product_(vec(b) in bits^lg(n)) w(vec(b))$ with a prover runtime linear in $n$.
 
 The entire sumcheck protocol can be seen below:
 

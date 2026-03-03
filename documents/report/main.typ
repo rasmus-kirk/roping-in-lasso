@@ -29,9 +29,9 @@
 
 #include "./01-introduction/00-introduction.typ"
 #include "./02-prerequisites/00-prerequisites.typ"
-#include "./03-sumcheck/00-sumcheck.typ"
+#include "./03-sumcheck-and-mle/00-sumcheck-and-mle.typ"
 #include "./04-gkr/00-gkr.typ"
-#include "./05-specialized-gkr/00-specialized-gkr.typ"
+#include "./05-productcheck/00-productcheck.typ"
 #include "./06-spartan/00-spartan.typ"
 #include "./07-spark/00-spark.typ"
 #include "./08-lasso/00-lasso.typ"
