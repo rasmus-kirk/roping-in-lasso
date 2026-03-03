@@ -103,7 +103,7 @@ now define the property more formally:
   simulator $S$ such that for every $x in L$, the transcripts produced by
   $S$ are indistinguishable from the interaction between any verifier and
   an honest prover:
-  $ S(x) tilde View(lr(chevron.l prover(x), verifier^* chevron.r)) $
+  $ S(x) tilde View(lr(chevron.l prover, verifier^* chevron.r)) $
 
 Where $(tilde)$ denotes indistinguishability. The flavor of Zero-Knowledge
 depends on the indistinguishability of the transcripts.
@@ -120,14 +120,14 @@ depends on the indistinguishability of the transcripts.
   - _Computationally indistinguishable_ $(tilde^C)$ if no probabilistic polynomial-time
     distinguisher $Ac$ can tell them apart with more than negligible advantage,
     though an unbounded adversary might:
-    $ forall x : abs(Pr[Ac(x) = D_1] - Pr[Ac(x) = D_2]) <= negl(lambda) $
+    $ abs(Pr[Ac(D_1) = top] - Pr[Ac(D_2) = top]) <= negl(lambda) $
 ]
 
 There are generally three types of Zero-Knowledge:
 
-- *Perfect Zero-Knowledge:* $S(x) tilde^P View(lr(chevron.l prover(x), verifier^* chevron.r))$.
-- *Statistical Zero-Knowledge:* $S(x) tilde^S View(lr(chevron.l prover(x), verifier^* chevron.r))$.
-- *Computational Zero-Knowledge:* $S(x) tilde^C View(lr(chevron.l prover(x), verifier^* chevron.r))$.
+- *Perfect Zero-Knowledge:* $S(x) tilde^P View(lr(chevron.l prover, verifier^* chevron.r))$.
+- *Statistical Zero-Knowledge:* $S(x) tilde^S View(lr(chevron.l prover, verifier^* chevron.r))$.
+- *Computational Zero-Knowledge:* $S(x) tilde^C View(lr(chevron.l prover, verifier^* chevron.r))$.
 
 == SNARKS
 

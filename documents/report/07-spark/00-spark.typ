@@ -65,8 +65,10 @@ Where for all $i in [1, n]$:
 ]
 
 In the preprocessing of the R1CS instance, a trusted party (sometimes the
-verifier itself) computes a succinct representation of the R1CS instance. This
-is how SNARKs are even able to achieve sublinear verification. A polynomial
+verifier itself) computes a succinct representation of the R1CS instance.
+This is a one-time cost that amortizes across all subsequent proofs for the
+same circuit and is how SNARKs are even able to achieve sublinear
+verification. A polynomial
 commitment to $"val"$ can be computed at this stage, but notice that the other two
 products of each term depend on the challenges $vec(zeta)$ and $vec(gamma)$.
 

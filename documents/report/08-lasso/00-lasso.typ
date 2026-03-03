@@ -359,3 +359,31 @@ $ lambda_(k) = lg^2(k) + lg(k), #h(2em) lambda_(N) = lg^2(N^(frac(style: "horizo
 With batching this then becomes:
 
 $ O((lg(k) + lg(N^(frac(style: "horizontal", 1, c)))) + (lambda_k + lambda_N) + (c + lg(k))) $
+
+Expanding $lambda_k$ and $lambda_N$ and simplifying, the verifier's work is
+polylogarithmic in both $k$ and $N^(frac(style: "horizontal", 1, c))$, plus
+a small additive $O(c)$ term from the recomposition function $g$.
+
+== Soundness
+
+The overall soundness of the Lasso lookup argument follows by a union bound
+over its constituent sub-protocols. We can compute this loosely using Big $O$
+notation. For simplicity denote $m = max(k, N^frac(style: "horizontal",
+1, c))$.
+
+- *Sumcheck:* The sumcheck over $lg(k)$ variables contributes
+  a soundness error of at most $O(frac(style: "horizontal", lg(k), |Fb|))$.
+- *Productchecks:* Each of the $4c$ grand-product arguments (for $RS_i,
+  WS_i, Init_i, Audit_i$ across $c$ sub-tables) invokes the specialized GKR
+  protocol. By the analysis of @sec:gkr-soundness, each contributes an error
+  of $O(frac(style: "horizontal", lg^2(m), Fb))$.
+- *Memory-checking:* The multiset equality check for each sub-table uses the
+  tuple-equality and multiset-equality arguments from @thm:tuple-equality-proof
+  and @thm:multiset-equality-proof, each contributing $O(frac(style:
+  "horizontal", m, Fb))$.
+
+By a union bound, the total soundness error is:
+
+$ delta_s <= O(frac(lg(k) + c dot lg^2(m) + c dot m, |Fb|)) $
+
+Which is negligible for any cryptographically sized field.

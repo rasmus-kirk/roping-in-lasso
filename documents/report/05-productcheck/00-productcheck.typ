@@ -15,7 +15,7 @@ called a _Grand Product Argument_ in the literature. It was central to
 the Plonk@plonk proof system. However, for a grand product of $n$ values,
 the protocol presented in Plonk took $O(n dot lg(n))$ time for the prover
 whereas we desire a stricter bound of $O(n)$. Incredibly, this is achieved
-with a sumcheck, once again highlighting the utility and power of the protocol.
+with a sumcheck, once again highlighting the utility of the protocol.
 
 If we consider GKR for a circuit of binary multiplication gates#footnote[You
 might reasonably wonder why not just replace the addition operation in sumcheck
