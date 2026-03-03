@@ -14,7 +14,7 @@ to the required assumption that a trusted party commits to $tilde(M)$. This
 is not an issue in Spartan, where it was already assumed that a trusted party
 committed to the matrices $vec(A), vec(B), vec(C)$. In general it would be
 quite useful to get a polynomial commitment scheme that takes only $O(n)$
-time to perform an evaluation proof. That is the evaluation proof is linear
+time to perform an evaluation proof. That is, the evaluation proof is linear
 in the _nonzero entries_ of $vec(M)$.
 
 This is the first important result shown in the Lasso paper, and remarkably
@@ -28,7 +28,7 @@ Before getting into the proof, it's important to understand
 that $tilde(val), tilde(row), tilde(col)$ need not be committed "honestly". If
 the prover commits some other polynomials $tilde(val)', tilde(row)',
 tilde(col)'$ this is then just equivalent to the prover committing to another
-Matrix $vec(M)'$.
+matrix $vec(M)'$.
 
 So, to get the desired result that the prover can perform
 #smallcaps("SPARK.Commit") themselves, we need to show that the multi-set
@@ -47,7 +47,7 @@ for optimization purposes (see @ex:global-timestamps-vs-counters).
 #proof[
     First, let the initial state of the memory be defined as:
 
-    $ Init = { (i, vec(RAM)[i], 0) }_(i=0)^N $
+    $ Init = { (i, vec(RAM)[i], 0) }_(i=0)^(N-1) $
 
     Which is enforced by the verifier.
   
@@ -96,8 +96,8 @@ is of size $N$ and that $N$ is a power of two, we could use memory-checking
 techniques to prove this. But imagine that this memory was extremely large,
 such as $2^128$. In this case the instantiated memory from the offline
 memory checking would also be $2^128$, far too large to instantiate in an
-interactive argument. We can use the same trick as was employed in Spark
-however, recall that in that case, we wanted to evaluate the multilinear
+interactive argument. We can use the same trick as was employed in Spark.
+However, recall that in that case, we wanted to evaluate the multilinear
 extension of $M$. We did so using two $eq$ polynomials, but what would happen
 if we used the natural MLE of $M$?
 
@@ -119,10 +119,10 @@ $eq$ using the identity:
 $ eq(vec(x) || vec(y), row(vec(b)) || col(vec(b))) = eq(vec(x), row(vec(b))) dot eq(vec(y), col(vec(b))) $
 
 A key insight of Lasso was that this trick is actually generally
-useful. Suppose we wanted to construct a lookup argument of bitwise-XOR,
-and suppose we wanted to perform this lookup on two unreasonably large values
-of $2^64$ giving us a truth-table of size $2^128$. This table would of course be way too large to ever concretely
-instantiate or especially commit to.
+useful. Suppose we wanted to construct a lookup argument of bitwise-XOR, and
+suppose we wanted to perform this lookup on two unreasonably large values of
+two 64-bit values giving us a truth-table of size $2^128$. This table would of
+course be way too large to ever concretely instantiate or especially commit to.
 
 But bitwise-XOR is exactly just that, bitwise, and this means that this table
 too, is _decomposable_. Instead of a single lookup in a table of size $2^128$
@@ -165,9 +165,9 @@ them together.
 So, for $eq$ we combined the two sub-tables with multiplication, but in this
 case we're combining the tables using bit concatenation. Since our tables
 take in bits and return a field element we can model this bit concatenation
-with in the following way:
+in the following way:
 
-$ sum_(i=1)^(c) v_i dot 2^(w dot (i-1)) $
+$ sum_(i=1)^(c) v_i dot 2^(w dot (c-i)) $
 
 Where $c$ is the number of chunks and $w$ is the _window size_, the number
 of bits per limb. Finally $vec(v)$ represents the result of each lookup into
@@ -184,21 +184,14 @@ this line of thought, we could already start constructing an interactive
 argument. We simply perform $c$ offline memory checks as in @sec:spark,
 then let the verifier recompose using $g$.
 
-
-// This final equation is incredibly powerful. Instead of performing a
-// memory-checking argument on a massively uninstantiable table of size $2^128$,
-// we merely perform $c$ independent, small offline memory checks to prove the
-// well-formedness of the $tilde(e)_i$ polynomials (using the exact offline
-// memory-checking techniques from @sec:spark).
-
 But Lasso has one more trick up its sleeve, using Spark, we can actually
 batch $k$ arguments into one. In general, we can view a lookup operation
 as a simple matrix-vector multiplication:
 
 $ vec(M) vec(t) = vec(a) $
 
-Where $vec(t)$ is our table of size $N$, $vec(a)$ is our vector of $m$ lookup
-results, and $vec(M)$ is an $k times N$ sparse matrix where each row has
+Where $vec(t)$ is our table of size $N$, $vec(a)$ is our vector of $k$ lookup
+results, and $vec(M)$ is a $k times N$ sparse matrix where each row has
 exactly one $1$ corresponding to the accessed index.
 
 #example(title: "Matrix-Vector Lookup for 1-bit XOR")[
@@ -231,23 +224,22 @@ We can of course use the usual methods to convert this to a polynomial form:
 
 $ tilde(M)(vec(x), vec(y)) dot tilde(t)(vec(y)) = tilde(a)(vec(x)) $
 
-Where $vec(x) in bits^lg(N), vec(y) in bits^lg(k)$. We now wish to establish
+Where $vec(x) in bits^lg(k), vec(y) in Fb^lg(N)$. We now wish to establish
 that the above equality holds, which we can of course use Schwartz-Zippel
 for. This means the verifier wants to check the evaluation $tilde(a)(vec(r))$
-at some random point $vec(r) inrand bits^lg(k)$ equals:
+at some random point $vec(r) inrand bits^lg(N)$ equals:
 
-$ tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) tilde(M)(vec(r), vec(b)) dot tilde(t)(vec(b)) $<eq:lol2>
+$ tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) tilde(M)(vec(r), vec(b)) dot tilde(t)(vec(b)) $<eq:lasso-lookup-dense>
 
 Since there is only a single entry in $M$ which is nonzero, then the above
 expression is the same as:
 
-$
-  tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) eq(vec(r), vec(b)) dot hat(T)[nz(vec(b))]
-$<eq:lol1>
+$ tilde(a)(vec(r)) meq sum_(vec(b) in bits^lg(k)) eq(vec(r), vec(b)) dot hat(T)[nz(vec(b))] $<eq:lasso-lookup-sparse>
 
-Where $nz$ denotes the nonzero entry of each row of $vec(M)$. This follows
-from the fact that the polynomials of @eq:lol1 and @eq:lol2 are both MLE
-and agree on all points on the boolean hypercube.
+Where $nz$ denotes the nonzero entry of each row of $vec(M)$. This
+follows from the fact that the polynomials of @eq:lasso-lookup-dense and
+@eq:lasso-lookup-sparse are both MLE and agree on all points on the boolean
+hypercube.
 
 As previously established because the table $hat(T)$ is decomposable,
 we can replace $hat(T)[nz(vec(b))]$ with our recomposition function $g$
@@ -276,7 +268,7 @@ operations:
 
 #table(
   columns: 5,
-  row-gutter: (auto, 2.2pt, auto, 2.2pt, auto, 2.2pt),
+  row-gutter: (auto, 2.2pt, auto, 2.2pt, auto, 2.2pt, auto),
   
   [*Commitments:*], $tilde(nz)_1, ..., tilde(nz)_c$, $tilde(e)_1, ..., tilde(e)_c$, $tilde(readTS)_1, ..., tilde(readTS)_c$, $tilde(auditTS)_1, ..., tilde(auditTS)_c$,
   [*Cost:*], $O(c dot k)$, $O(c dot k)$, $O(c dot k)$, $O(c dot N^(frac(style: "horizontal", 1, c)))$,
@@ -320,23 +312,31 @@ of $O(k)$ each, for a total cost of $O(n dot k)$:
 $ PCCheck(C_1, d, vec(zeta), v_1, pi_1) and ... and PCCheck(C_(n), d, vec(zeta), v_(n), pi_(n)) $
 
 But, assuming we have additively homomorphic commitments, the prover could
-also instead construct a batching polynomial $g$, using a uniformly random
+also instead construct a batching polynomial $q$, using a uniformly random
 value $alpha$.
 
-$ g(vec(x)) = sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(x)) $
+$ q(vec(x)) = sum_(i=1)^(n) alpha^(i-1) dot f_i(vec(x)) $
 
 Send the evaluation and proof for $g(vec(zeta))$ along with the evaluations
 $v_1, dots, v_n$. The verifier can then check whether:
 
-$ PCCheck(C_g, d, vec(zeta), g(vec(zeta)), pi_g) and g(vec(zeta)) meq sum_(i=1)^(n) alpha^(i-1) dot v_i $
+$ PCCheck(C_q, d, vec(zeta), q(vec(zeta)), pi_q) and q(vec(zeta)) meq sum_(i=1)^(n) alpha^(i-1) dot v_i $
 
 Which has only a $O(n)$ cost for the prover. Applying these batching
 techniques, the cost for the prover becomes:
 
 $ O((3 dot c dot k + c dot N^(frac(style: "horizontal", 1, c))) + (k + N^(frac(style: "horizontal", 1, c))) + (k + N^(frac(style: "horizontal", 1, c))) + c dot k) $
 
-Thus, the primary cost to the prover becomes the commitments, which is also
-why the Lasso paper primarily focuses on the commitment cost.
+Since the first term is dominant, we can simplify this to:
+
+$ O(c dot k + c dot N^(frac(style: "horizontal", 1, c))) $
+
+Picking $c$ such that $N^(frac(style: "horizontal", 1, c)) < c dot k$
+means that the prover cost primarily scales with the number of lookups,
+not the size of the table. Another thing to note is that the primary cost
+to the prover is from the commitments, due to the batching techniques applied
+above. This is also why the Lasso paper primarily focuses on the commitment
+cost in their discussion.
 
 *Verifier Cost:*
 
