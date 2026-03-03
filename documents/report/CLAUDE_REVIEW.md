@@ -2,13 +2,23 @@
 
 Reviews Done:
 - Chapter 1: 0
-- Chapter 2: 0
+- Chapter 2: 1
 - Chapter 3: 1
 - Chapter 4: 1
 - Chapter 5: 1
 - Chapter 6: 1
 - Chapter 7: 1
 - Chapter 8: 1
+
+## Chapter 2: Prerequisites (`02-prerequisites/00-prerequisites.typ`)
+
+### Errors (mathematical)
+
+6. **Line 122: Computational indistinguishability formula issues.** Two
+   problems: (a) the quantifier should be over PPT distinguishers
+   $\mathcal{A}$, not over $x$; (b) the notation is inconsistent — one
+   probability uses `->` and the other uses `=`. The standard form is
+   `$|Pr[A(D_1) = 1] - Pr[A(D_2) = 1]| <= negl(lambda)$`.
 
 ## Chapter 8: Lasso (`08-lasso/00-lasso.typ`)
 
