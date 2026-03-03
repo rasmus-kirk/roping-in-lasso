@@ -40,7 +40,7 @@ $
                                   &= sum_(vec(k) in bits^ceil(lg(n))) "val"(vec(k)) dot tilde("eq")(vec(zeta), "row"(vec(k))) dot tilde("eq")(vec(eta), "col"(vec(k)))
 $<eq:spark-sumcheck>
 
-Where for all $i in [1, n]$:
+Where for all $i in [0, n-1]$:
 - $"val"(toBits(i)) : bits^(ceil(lg(n))) -> Fb$ maps a bitstring to the value of the $i$'th nonzero entry of $M$.
 - $"row"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the row index of the $i$'th nonzero entry of $M$.
 - $"col"(toBits(i)) : bits^(ceil(lg(n))) -> bits^s$ maps a bitstring to the column index of the $i$'th nonzero entry of $M$.
@@ -74,8 +74,8 @@ products of each term depend on the challenges $vec(zeta)$ and $vec(eta)$.
 
 If the prover could access a trusted RAM, consisting of all $m$ values of
 $
-  [tilde("eq")(vec(zeta), "row"("toBits"(1))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m)))] \
-  [tilde("eq")(vec(eta), "col"("toBits"(1))), dots, tilde("eq")(vec(eta), "col"("toBits"(m)))]
+  [tilde("eq")(vec(zeta), "row"("toBits"(0))), dots, tilde("eq")(vec(zeta), "row"("toBits"(m-1)))] \
+  [tilde("eq")(vec(eta), "col"("toBits"(0))), dots, tilde("eq")(vec(eta), "col"("toBits"(m-1)))]
 $
 
 Then we _could_ perform sumcheck of the sum in @eq:spark-sumcheck. The next
@@ -191,7 +191,7 @@ And intuitively fake coins would not have a corresponding member in the
   fabricate fake values that were never in the RAM to begin with, or they
   can try to convince the verifier a current value is a previous (but at
   the time, valid) value. These are the only two cases as we assume that
-  as for any value, it must either have never been in the RAM (fake value)
+  for any value, it must either have never been in the RAM (fake value)
   or it was previously valid.
 
   *Fake value case:* $prover$ sends $(v_"fake", t)$ in step one of
@@ -235,14 +235,15 @@ proving tuple equality. The two lemmas below handle each of these cases:
     vec(b) &= ( b_1, dots, b_n ) \
   $
 
-  That is $forall i in [1..n] : a_i = b_i$, the prover can try to convince the verifier that:
+  That is $forall i in [1..n] : a_i = b_i$, the prover can try to convince
+  the verifier that:
 
   $
     sum^n_(i=1) alpha^(i-1) dot a_i meq sum^n_(i=1) alpha^(i-1) dot b_i
   $<eq:tuple-equality>
 
   For a uniformly random $alpha$ and with soundness bound $frac(style:
-  "horizontal",  n, |Fb|)$ and completeness of one.
+  "horizontal",  n-1, |Fb|)$ and completeness of one.
 ]<thm:tuple-equality-proof>
 
 #proof[
@@ -252,7 +253,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
   respectively. If the polynomials are equal, then the coefficients, which
   represent each element in the list, are equal. By Schwartz-Zippel, the
   probability of the check passing, given that the claim does not hold is
-  $frac(style: "horizontal",  n, |Fb|)$.
+  $frac(style: "horizontal",  n-1, |Fb|)$.
 ]
 
 #lemma[
@@ -272,7 +273,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
   $
 
   For a uniformly random $beta$ and with soundness bound $frac(style:
-  "horizontal",  n, |Fb|)$ and completeness of one.
+  "horizontal",  n-1, |Fb|)$ and completeness of one.
 ]<thm:multiset-equality-proof>
 
 #proof[
@@ -286,7 +287,7 @@ proving tuple equality. The two lemmas below handle each of these cases:
   $
 
   Then by Schwartz-Zippel, if we consider $e(X) = p(X) - q(X)$ then $e(beta)
-  = 0$ implies that $p = q$ with probability $1 - frac(style:"horizontal", n,
+  = 0$ implies that $p = q$ with probability $1 - frac(style:"horizontal", n-1,
   |Fb|)$. Now, we just need to prove that $p = q ==> { a_1, dots,
   a_n } = { b_1, dots, b_n }$.
 
@@ -294,8 +295,8 @@ proving tuple equality. The two lemmas below handle each of these cases:
 
   $ p(X) = product_((b_1, dots, b_(ceil(lg(n)))) in bits^(ceil(lg(n)))) tilde(f)(b_1, dots, b_(ceil(lg(n)))) - X $
 
-  This polynomial evaluates to zero only if one of the factors equals
-  $tilde(f)(vec(b))$, so the roots are:
+  This polynomial evaluates to zero only if one of the factors equals zero,
+  so the roots are:
 
   $
     "roots"(p) &= { &&tilde(f)(0, ..., 0), &&tilde(f)(0, ..., 1), &&#h(1em)dots,#h(1em) &&tilde(f)(1, ..., 1) &&} \
@@ -469,7 +470,7 @@ timestamp polynomials:
 #let MemoryInTheHead = [#smallcaps("MemoryInTheHead")]
 #pseudocode(title: "MemoryInTheHead", args: ($M$,), [
   + *Let* $m$ denote the dimensions of the matrix $M in Fb^(m times m)$
-  + *Let* $vec(auditTS)_row = "vec!"[0; m], vec(auditTS)_col = "vec!"[0; m]$
+  + *Let* $vec(auditTS)_row = "vec!"[0; m-1], vec(auditTS)_col = "vec!"[0; m-1]$
   + *Let* $vec(readTS)_row = [ #h(0.5em) ], vec(readTS)_col = [ #h(0.5em) ]$
   + *For* $(i, j) in ([0..m], [0..m])$*:*
     + *If* $M(i, j) != 0$*:*

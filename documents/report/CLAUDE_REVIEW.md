@@ -7,7 +7,7 @@ Reviews Done:
 - Chapter 4: 2
 - Chapter 5: 2
 - Chapter 6: 3
-- Chapter 7: 2
+- Chapter 7: 3
 - Chapter 8: 2
 
 ## Chapter 1: Introduction (`01-introduction/00-introduction.typ`)
