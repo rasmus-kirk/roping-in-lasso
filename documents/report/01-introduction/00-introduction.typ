@@ -39,7 +39,7 @@ The structure is as follows:
   the sumcheck protocol, the building blocks underlying all other protocols
   in this document. If these short expositions are insufficient, the reader
   is encouraged to consult Justin Thaler's book@thaler-book.
-- @sec:gkr presents the GKR interactive proof for layered arithmetic
+- @sec:gkr presents the GKR@gkr interactive proof for layered arithmetic
   circuits. The exposition mostly follows Thaler's book@thaler-book,
   but uses the linear-combination technique from Libra@libra to reduce
   two claims to one at each layer.
