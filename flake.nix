@@ -29,6 +29,7 @@
           (pkgs.runCommand "slides" {} ''
             mkdir -p $out
             cp -a ${(documentsF pkgs).packages.slidesGkr} $out/slides-gkr.pdf
+            cp -a ${(documentsF pkgs).packages.slidesLasso} $out/slides-lasso.pdf
           '')
         ];
         standalonePages = let
@@ -83,6 +84,7 @@
         loop = (websiteF pkgs).loop;
         report = (documentsF pkgs).packages.report;
         slidesGkr = (documentsF pkgs).packages.slidesGkr;
+        slidesLasso = (documentsF pkgs).packages.slidesLasso;
         default = website;
       });
     };

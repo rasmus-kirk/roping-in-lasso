@@ -41,10 +41,18 @@
       creationTimestamp = self.lastModified;
       fonts = [ pkgs.roboto ];
     };
+    slidesLasso = pkgs.buildTypstDocument {
+      name = "slides-lasso";
+      src = ./slides-lasso;
+      typstEnv = typstPkgs;
+      creationTimestamp = self.lastModified;
+      fonts = [ pkgs.roboto ];
+    };
 in {
-  packages.report= report; 
-  packages.contract = contract; 
-  packages.slidesGkr= slidesGkr; 
+  packages.report= report;
+  packages.contract = contract;
+  packages.slidesGkr= slidesGkr;
+  packages.slidesLasso = slidesLasso;
 
   devShells.default = pkgs.mkShellNoCC {
     inputsFrom = [ report ];
