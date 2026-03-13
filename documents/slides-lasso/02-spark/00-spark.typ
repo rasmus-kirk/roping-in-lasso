@@ -22,7 +22,8 @@
 
   *Can't the verifier compute this themselves?*
 
-  - Direct evaluation: iterate over all $m^2$ entries → $O(m^2)$ work
+  - Naive direct evaluation: iterate over $m^2$ entries ($O(m^2)$)
+  - Smart direct evaluation: iterate only over nonzero entries ($O(n)$)
   - Standard PCS opening proof: $O(m^2)$ prover time
 
   #show: later

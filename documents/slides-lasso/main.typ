@@ -16,8 +16,6 @@
     *Roping in Lasso*
   ]
 
-  Spartan
-
   #divider
 
   #set text(size: .8em, weight: "light")

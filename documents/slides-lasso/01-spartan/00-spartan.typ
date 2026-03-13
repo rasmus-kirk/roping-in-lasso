@@ -5,16 +5,16 @@
 #let hadamard = $dot.o$
 #let graph-text-size = 18pt
 
-// ─────────────────────────────────────────────
-// Section 1: R1CS
-// ─────────────────────────────────────────────
+#new-section[Spartan]
 
-#new-section[R1CS]
+// ─────────────────────────────────────────────
+// SubSection 1: R1CS
+// ─────────────────────────────────────────────
 
 #slide[
   = Rank-1 Constraint System
 
-  Represents arithmetic circuit satisfiability:
+  Represent arithmetic circuit satisfiability with matrices:
 
   $ vec(A) vec(w) hadamard vec(B) vec(w) = vec(C) vec(w) $
 
@@ -25,7 +25,7 @@
 
   #show: later
 
-  _De-facto lingua franca_ for SNARK circuits
+  De-facto _lingua franca_ for SNARK circuits
 ]
 
 #slide[
@@ -87,15 +87,13 @@
 ]
 
 // ─────────────────────────────────────────────
-// Section 2: Arithmetizing R1CS
+// SubSection 2: Arithmetizing R1CS
 // ─────────────────────────────────────────────
 
-#new-section[Arithmetizing R1CS]
-
 #slide[
-  = Encoding as Boolean Functions
+  = Encoding as Functions over the Boolean Hypercube
 
-  Simplify: $vec(A), vec(B), vec(C) in Fb^(m times m)$, $vec(w) in Fb^m$, $s := lg(m)$
+  Simplify: $vec(A), vec(B), vec(C) in Fb^(m times m)$, $M in {A,B,C}$, $vec(w) in Fb^m$, $s := lg(m)$
 
   Represent as functions over the boolean hypercube:
 
@@ -108,16 +106,17 @@
 
   Define $F : bits^s -> Fb$ to check R1CS row by row:
 
-  $
+  #text(size: 0.85em)[$
     F(vec(x)) = (sum_(vec(b) in bits^s) A(vec(x), vec(b)) dot w(vec(b))) dot
-               (sum_(vec(b) in bits^s) B(vec(x), vec(b)) dot w(vec(b))) -
-               sum_(vec(b) in bits^s) C(vec(x), vec(b)) dot w(vec(b))
-  $
+                (sum_(vec(b) in bits^s) B(vec(x), vec(b)) dot w(vec(b))) -
+                sum_(vec(b) in bits^s) C(vec(x), vec(b)) dot w(vec(b))
+  $]
+
+  $ forall vec(b) in bits^s : F(vec(b)) meq 0 $
 ]
 
 #slide[
-  = TODO
-
+  = Encoding as Polynomials
 
   Define the MLEs of $M in {A,B,C}$ and $w$:
 
@@ -130,27 +129,28 @@
 
   Lift $F$ to a polynomial $f$ over these MLEs:
 
-  $
-    f(vec(x)) = underbrace((sum_(vec(b)) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b))), macron(A)(vec(x))) dot
-               underbrace((sum_(vec(b)) tilde(B)(vec(x), vec(b)) dot tilde(w)(vec(b))), macron(B)(vec(x))) -
-               underbrace(sum_(vec(b)) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b)), macron(C)(vec(x)))
-  $
-
+  #text(size: 0.85em)[$
+    f(vec(x)) = (sum_(vec(b)) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b))) dot
+                (sum_(vec(b)) tilde(B)(vec(x), vec(b)) dot tilde(w)(vec(b))) -
+                sum_(vec(b)) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))
+  $]
 ]
 
 #slide[
   = R1CS Satisfiability via Zero Test
 
-  $ "R1CS satisfied" <==> forall vec(x) in bits^s : f(vec(x)) = 0 $
+  $ "R1CS satisfied" <==> forall vec(b) in bits^s : f(vec(b)) = 0 $
 
   #show: later
 
-  *Approach:* use Schwartz-Zippel — check $f(vec(gamma)) = 0$ for random $vec(gamma)$
+  *Schwartz-Zippel?* Check $f(vec(gamma)) = 0$ for random $vec(gamma)$
 
   #show: later
 
-  *Problem:* $f(vec(x))$ has _degree 2_ in each variable of $vec(x)$ \
-  A degree-2 polynomial can vanish on all of $bits^s$ without being identically zero!
+  *Problem:* $f(vec(x))$ has _degree 2_ in each variable of $vec(x)$ and
+  can vanish on all of $bits^s$ without being the zero polynomial!
+
+  This would break completeness...
 
   #show: later
 
@@ -166,31 +166,26 @@
 
   #show: later
 
-  *Useful fact:* a multilinear polynomial is uniquely determined by its hypercube values
+  From the definition of MLE, $forall vec(b) in bits^s : f(vec(b)) =
+  tilde(f)(vec(b))$, and thus:
 
-  $ tilde(f) equiv 0 <==> f(vec(b)) = 0 quad forall vec(b) in bits^s <==> "R1CS satisfied" $
+  $ forall vec(b) in bits^s : tilde(f) equiv 0 <==> f(vec(b)) = 0 <==> "R1CS satisfied" $
 
   #show: later
 
-  Now Schwartz-Zippel applies safely:
+  Now we can apply Schwartz-Zippel:
 
-  $ vec(gamma) inrand Fb^s : tilde(f)(vec(gamma)) = 0 ==> tilde(f) equiv 0 $
+  $ vec(gamma) inrand Fb^s : tilde(f)(vec(gamma)) = 0 ==> "R1CS satisfied" $
 
-  *Goal:* use sumcheck to prove $tilde(f)(vec(gamma)) = 0$
+  *Goal:* use sumcheck to prove $tilde(f)(vec(gamma)) = sum_(vec(b) in bits^s) tilde("eq")(vec(x), vec(b)) dot f(vec(b)) = 0$
 ]
 
 // ─────────────────────────────────────────────
-// Section 3: Spartan Protocol
+// SubSection 3: Spartan Protocol
 // ─────────────────────────────────────────────
-
-#new-section[Spartan Protocol]
 
 #slide[
   = First Sumcheck
-
-  Expand $tilde(f)(vec(gamma)) = 0$:
-
-  $ sum_(vec(b) in bits^s) tilde("eq")(vec(gamma), vec(b)) dot f(vec(b)) meq 0 $
 
   Run sumcheck on the polynomial:
 
@@ -205,11 +200,7 @@
                    &= tilde("eq")(vec(gamma), vec(zeta)) dot (macron(A)(vec(zeta)) dot macron(B)(vec(zeta)) - macron(C)(vec(zeta)))
   $
 
-  $tilde("eq")(vec(gamma), vec(zeta))$ is computable in $O(s)$ — but what about $macron(A), macron(B), macron(C)$?
-]
-
-#slide[
-  = Helper Polynomials $macron(A), macron(B), macron(C)$
+  Where:
 
   $
     macron(A)(vec(x)) := sum_(vec(b) in bits^s) tilde(A)(vec(x), vec(b)) dot tilde(w)(vec(b)), #h(2em)
@@ -217,13 +208,23 @@
     macron(C)(vec(x)) := sum_(vec(b) in bits^s) tilde(C)(vec(x), vec(b)) dot tilde(w)(vec(b))
   $
 
-  #show: later
+  // $tilde("eq")(vec(gamma), vec(zeta))$ is computable in $O(s)$ — but what about $macron(A), macron(B), macron(C)$?
+]
 
-  Prover sends claimed evaluations:
+#slide[
+  = Helper Polynomials $macron(A), macron(B), macron(C)$
+
+  Prover simply sends claimed evaluations:
 
   $ v_macron(A) := macron(A)(vec(zeta)), quad v_macron(B) := macron(B)(vec(zeta)), quad v_macron(C) := macron(C)(vec(zeta)) $
 
   Verifier checks $g_1(vec(zeta)) meq tilde("eq")(vec(gamma), vec(zeta)) dot (v_macron(A) dot v_macron(B) - v_macron(C))$
+
+  #show: later
+
+  $$
+
+  How does the verifier know that $v_macron(A), v_macron(B), v_macron(C)$ are valid?
 ]
 
 // #slide[
@@ -258,10 +259,10 @@
 
   *Reduce 3 claims to 1* using random $alpha inrand Fb$:
 
-  $
+  #text(size: 0.85em)[$
     v_macron(A) + alpha dot v_macron(B) + alpha^2 dot v_macron(C) meq
     sum_(vec(b) in bits^s) (tilde(A)(vec(zeta), vec(b)) + alpha dot tilde(B)(vec(zeta), vec(b)) + alpha^2 dot tilde(C)(vec(zeta), vec(b))) dot tilde(w)(vec(b))
-  $
+  $]
 
   #show: later
 
@@ -304,36 +305,32 @@
 
   #show: later
 
-  - $tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$:
-    evaluations of _sparse matrix polynomials_ #sym.arrow *Spark*
+  - $tilde(w)(vec(eta))$: evaluation of the _witness polynomial_ $-->$
+    Regular polynomial commitment scheme
 
-  - $tilde(w)(vec(eta))$: evaluation of the _witness polynomial_ #sym.arrow *polynomial commitment scheme*
+  - $tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$:
+    evaluations of sparse matrix polynomials $-->$ _Sparse_ polynomial commitment scheme.
 ]
 
 #slide[
   = Spartan: Summary
 
-  #set text(size: 0.9em)
-
-  #table(
-    columns: (auto, auto, auto),
-    stroke: none,
-    table.header([*Step*], [*What*], [*Cost*]),
-    table.hline(stroke: 0.5pt),
-    [Sumcheck 1], [$g_1$ — encode R1CS as poly identity], [$O(n + m)$ prover],
-    [Sumcheck 2], [$g_2$ — verify $macron(A), macron(B), macron(C)$], [$O(n + m)$ prover],
-    [PCS query],  [$tilde(w)(vec(eta))$], [commitment scheme],
-    [Spark],      [$tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$], [next chapter],
-  )
+  Sumcheck on $g_1(vec(x))$ shows that $tilde(f) equiv 0 ==> "R1CS satisfied"$
 
   #show: later
 
-  *Two rounds of sumcheck with linear-time provers*
+  _Given that_ $v_macron(A) = macron(A)(vec(zeta)), v_macron(B) = macron(B)(vec(zeta)), v_macron(C) = macron(C)(vec(zeta))$...
 
-  Reduces R1CS satisfiability to sparse polynomial evaluations
+  #show: later
+
+  Which sumcheck on $g_2(vec(x))$ shows
+
+  #show: later
+
+  _Given that_ $tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$ are correct evaluations...
 ]
 
 #slide[
   #show: focus
-  Spark
+  Solved by Spark!
 ]
