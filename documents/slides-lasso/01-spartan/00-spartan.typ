@@ -28,63 +28,63 @@
   De-facto _lingua franca_ for SNARK circuits
 ]
 
-#slide[
-  = R1CS Example: $y_1 = (w_1 + w_2) dot w_3$
+// #slide[
+//   = R1CS Example: $y_1 = (w_1 + w_2) dot w_3$
 
-  #align(center, [
-    #diagram(debug: 0, node-stroke: 1pt, {
-      // Layer 1
-      let w1 = (0, 0)
-      let w2 = (0, 1)
-      let w3 = (0, 2)
-      node(shape: rect, w1, [$w_1$])
-      node(shape: rect, w2, [$w_2$])
-      node(shape: rect, w3, [$w_3$])
+//   #align(center, [
+//     #diagram(debug: 0, node-stroke: 1pt, {
+//       // Layer 1
+//       let w1 = (0, 0)
+//       let w2 = (0, 1)
+//       let w3 = (0, 2)
+//       node(shape: rect, w1, [$w_1$])
+//       node(shape: rect, w2, [$w_2$])
+//       node(shape: rect, w3, [$w_3$])
 
-      // Layer 2
-      let add = (0.75, 0.5)
-      node(shape: circle, add, $+$)
-      edge(w1, (add.at(0), w1.at(1)), add, "->")
-      edge(w2, (add.at(0), w2.at(1)), add, "->")
+//       // Layer 2
+//       let add = (0.75, 0.5)
+//       node(shape: circle, add, $+$)
+//       edge(w1, (add.at(0), w1.at(1)), add, "->")
+//       edge(w2, (add.at(0), w2.at(1)), add, "->")
 
-      // Layer 3
-      let w1_plus_w2 = (1.5, 0.5)
-      node(stroke: 0em, w1_plus_w2, $w_1 + w_2$)
-      edge(add, w1_plus_w2, "-")
+//       // Layer 3
+//       let w1_plus_w2 = (1.5, 0.5)
+//       node(stroke: 0em, w1_plus_w2, $w_1 + w_2$)
+//       edge(add, w1_plus_w2, "-")
 
-      // Layer 4
-      let mult = (2.1, 1.25)
-      node(shape: circle, mult, $times$)
-      edge(w3, (mult.at(0), w3.at(1)), mult, "->")
-      edge(w1_plus_w2, (mult.at(0), w1_plus_w2.at(1)), mult, "->")
+//       // Layer 4
+//       let mult = (2.1, 1.25)
+//       node(shape: circle, mult, $times$)
+//       edge(w3, (mult.at(0), w3.at(1)), mult, "->")
+//       edge(w1_plus_w2, (mult.at(0), w1_plus_w2.at(1)), mult, "->")
 
-      // Layer 5
-      let res = (2.85, 1.25)
-      node(stroke: 0em, res, $(w_1 + w_2) dot w_3$)
-      edge(mult, res, "-")
+//       // Layer 5
+//       let res = (2.85, 1.25)
+//       node(stroke: 0em, res, $(w_1 + w_2) dot w_3$)
+//       edge(mult, res, "-")
 
-      // Layer 6
-      let out = (3.70, 1.25)
-      node(shape: rect, out, $y_1$)
-      edge(res, out, "->")
-    })
-  ])
+//       // Layer 6
+//       let out = (3.70, 1.25)
+//       node(shape: rect, out, $y_1$)
+//       edge(res, out, "->")
+//     })
+//   ])
 
-  #show: later
+//   #show: later
 
-  $ vec(w) = mat(1, w_1, w_2, w_3, y_1)^top $
+//   $ vec(w) = mat(1, w_1, w_2, w_3, y_1)^top $
 
-  $
-    vec(A) = mat(0, 1, 1, 0, 0), quad
-    vec(B) = mat(0, 0, 0, 1, 0), quad
-    vec(C) = mat(0, 0, 0, 0, 1)
-  $
+//   $
+//     vec(A) = mat(0, 1, 1, 0, 0), quad
+//     vec(B) = mat(0, 0, 0, 1, 0), quad
+//     vec(C) = mat(0, 0, 0, 0, 1)
+//   $
 
-  $
-    vec(C) vec(w) = vec(A) vec(w) hadamard vec(B) vec(w)
-    ==> y_1 = (w_1 + w_2) dot w_3
-  $
-]
+//   $
+//     vec(C) vec(w) = vec(A) vec(w) hadamard vec(B) vec(w)
+//     ==> y_1 = (w_1 + w_2) dot w_3
+//   $
+// ]
 
 // ─────────────────────────────────────────────
 // SubSection 2: Arithmetizing R1CS
@@ -312,25 +312,25 @@
     evaluations of sparse matrix polynomials $-->$ _Sparse_ polynomial commitment scheme.
 ]
 
-#slide[
-  = Spartan: Summary
+// #slide[
+//   = Spartan: Summary
 
-  Sumcheck on $g_1(vec(x))$ shows that $tilde(f) equiv 0 ==> "R1CS satisfied"$
+//   Sumcheck on $g_1(vec(x))$ shows that $tilde(f) equiv 0 ==> "R1CS satisfied"$
 
-  #show: later
+//   #show: later
 
-  _Given that_ $v_macron(A) = macron(A)(vec(zeta)), v_macron(B) = macron(B)(vec(zeta)), v_macron(C) = macron(C)(vec(zeta))$...
+//   _Given that_ $v_macron(A) = macron(A)(vec(zeta)), v_macron(B) = macron(B)(vec(zeta)), v_macron(C) = macron(C)(vec(zeta))$...
 
-  #show: later
+//   #show: later
 
-  Which sumcheck on $g_2(vec(x))$ shows
+//   Which sumcheck on $g_2(vec(x))$ shows
 
-  #show: later
+//   #show: later
 
-  _Given that_ $tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$ are correct evaluations...
-]
+//   _Given that_ $tilde(A)(vec(zeta), vec(eta)), tilde(B)(vec(zeta), vec(eta)), tilde(C)(vec(zeta), vec(eta))$ are correct evaluations...
+// ]
 
-#slide[
-  #show: focus
-  Solved by Spark!
-]
+// #slide[
+//   #show: focus
+//   Solved by Spark!
+// ]

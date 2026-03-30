@@ -40,19 +40,17 @@
     tilde(M)(vec(zeta), vec(eta))
       = sum_(vec(k) in bits^(ceil(lg(n))))
         underbrace("val"(vec(k)), v_i)
-        dot underbrace(tilde("eq")(vec(zeta), "row"(vec(k))), e_"row"(vec(k)))
-        dot underbrace(tilde("eq")(vec(eta), "col"(vec(k))), e_"col"(vec(k)))
+        dot underbrace(tilde("eq")(vec(zeta), "row"(vec(k))), e_("row")(vec(k)))
+        dot underbrace(tilde("eq")(vec(eta), "col"(vec(k))), e_("col")(vec(k)))
   $
 
   #show: later
 
-  This _is_ a sumcheck — but the prover must provide honest $e_"row", e_"col"$ vectors
+  This _is_ a sumcheck, but the prover must provide honest $e_"row", e_"col"$ polynomials
 
   #show: later
 
   *Idea:* model $e_"row"$ and $e_"col"$ as reads from a trusted RAM
-
-  If the prover can _prove_ correct RAM access then evaluation is verified
 ]
 
 // ─────────────────────────────────────────────
@@ -62,9 +60,14 @@
 // #new-section[Offline Memory Checking]
 
 #slide[
+  #show: focus
+  Offline Memory Checking
+]
+
+#slide[
   = Offline Memory Checking
 
-  RAM as a list of _(address, value, timestamp)_ tuples:
+  RAM as a set of _(address, value, timestamp)_ tuples:
 
   $ "RAM" = { (1, v_1, t_1), ..., (m, v_m, t_m) } $
 
@@ -121,7 +124,7 @@
 
   #show: later
 
-  *In practice:* store sets as running hash digests — compare digests at the end
+  *In practice:* store sets as running hash digests
 ]
 
 // ─────────────────────────────────────────────
@@ -166,9 +169,34 @@
 //   *Excellent use-case for the specialized GKR grand product!*
 // ]
 
+// ─────────────────────────────────────────────
+// Section 4: Spark Construction
+// ─────────────────────────────────────────────
+
+// #new-section[Spark Construction]
+
+#slide[
+  #show: focus
+  Back to Spark
+]
+
+#slide[
+  = Counters
+
+  In Spark the RAM is _read-only_, the prover reads, a trusted party wrote
+
+  #show: later
+
+  *Simplification:* replace global timestamps with _per-address counters_
+
+  - $"writeTS" = "readTS" + 1$ no need to commit to $"writeTS"$
+]
+
 #slide[
   = Proving $Init union WS = RS union Audit$
 
+  In a SNARK context we use polynomials...
+  
   Use the productcheck to check:
 
   $
@@ -177,23 +205,6 @@
   $
 ]
 
-// ─────────────────────────────────────────────
-// Section 4: Spark Construction
-// ─────────────────────────────────────────────
-
-#new-section[Spark Construction]
-
-#slide[
-  = Read-Only RAM + Counters
-
-  In Spark the RAM is _read-only_ — the prover reads, a trusted party wrote
-
-  #show: later
-
-  *Simplification:* replace global timestamps with _per-address counters_
-
-  - $"writeTS" = "readTS" + 1$ no need to commit to $"writeTS"$
-]
 
 #slide[
   = RAM Polynomials

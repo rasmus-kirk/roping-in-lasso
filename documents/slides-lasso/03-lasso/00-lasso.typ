@@ -66,7 +66,7 @@
 
   #show: later
 
-  *Lasso's insight:* this decomposability trick is broadly useful, many real tables decompose similarly
+  *Lasso's insight:* this decomposability trick is broadly useful, many practical tables decompose similarly
 ]
 
 #slide[
@@ -74,7 +74,7 @@
 
   *Idea:* split one large table into $c$ smaller sub-tables of size $N^(1/c)$:
 
-  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_c[overline(vec(b))_c]) $
+  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_(c)[overline(vec(b))_c]) $
 
   where $vec(b) = overline(vec(b))_1 || ... || overline(vec(b))_c$
 
@@ -87,6 +87,30 @@
   For other tables (e.g. range checks, bitwise ops): $g$ can be *bit-concatenation*:
 
   $ g(v_1, ..., v_c) = sum_(i=1)^c v_i dot 2^(w(c-i)) $
+]
+
+#slide[
+  = A Single Lookup Argument
+
+  With decomposable tables, we already have a complete single-lookup argument:
+
+  #show: later
+
+  + Run $c$ independent Spark-style memory checks — one per sub-table $hat(T)_i$
+
+  #show: later
+
+  + Each sub-table has size $N^(1/c)$, small enough to instantiate concretely
+
+  #show: later
+
+  + The verifier recomposes the result using $g$:
+
+  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_(c)[overline(vec(b))_c]) $
+
+  #show: later
+
+  *But Lasso goes further:* we can batch $k$ lookups into a single argument
 ]
 
 #slide[
@@ -118,7 +142,7 @@
     tilde(a)(vec(r)) meq sum_(vec(b) in bits^(lg(k))) tilde("eq")(vec(r), vec(b)) dot hat(T)["nz"(vec(b))]
   $
 
-  where $"nz"(vec(b))$ is the index accessed on lookup $vec(b)$
+  where $"nz"(vec(b))$ is the non-zero entry of the given row
 
   #show: later
 
@@ -128,46 +152,46 @@
 #slide[
   = The Lasso Sumcheck
 
-  Let $tilde(e)_i(vec(x))$ be the MLE of the $k$ lookups into sub-table $hat(T)_i$
+  Let $tilde(e)_(i)(vec(x))$ be the MLE of the $k$ lookups into sub-table $hat(T)_i$
 
   Substituting the decomposition:
 
   $
-    tilde(a)(vec(r)) = sum_(vec(b) in bits^(lg(k))) tilde("eq")(vec(r), vec(b)) dot g(tilde(e)_1(vec(b)), ..., tilde(e)_c(vec(b)))
+    tilde(a)(vec(r)) = sum_(vec(b) in bits^(lg(k))) tilde("eq")(vec(r), vec(b)) dot g(tilde(e)_1(vec(b)), ..., tilde(e)_(c)(vec(b)))
   $
 
   #show: later
 
   Run sumcheck over this with polynomial:
 
-  $ f_"Lasso"(vec(x)) := tilde("eq")(vec(r), vec(x)) dot g(tilde(e)_1(vec(x)), ..., tilde(e)_c(vec(x))) $
+  $ f_("Lasso")(vec(x)) := tilde("eq")(vec(r), vec(x)) dot g(tilde(e)_1(vec(x)), ..., tilde(e)_(c)(vec(x))) $
 
   #show: later
 
   Assuming each $tilde(e)_i$ is correct, this proves all $k$ lookups at once
 ]
 
-#slide[
-  = Verifying Each $tilde(e)_i$
+// #slide[
+//   = Verifying Each $tilde(e)_i$
 
-  Each $tilde(e)_i$ must encode honest lookups into sub-table $hat(T)_i$
+//   Each $tilde(e)_i$ must encode honest lookups into sub-table $hat(T)_i$
 
-  #show: later
+//   #show: later
 
-  *Use Spark!* For each sub-table $i in [c]$, the prover commits to:
+//   *Use Spark!* For each sub-table $i in [c]$, the prover commits to:
 
-  $
-    tilde("nz")_i, quad tilde(e)_i, quad tilde("readTS")_i, quad tilde("auditTS")_i
-  $
+//   $
+//     tilde("nz")_i, quad tilde(e)_i, quad tilde("readTS")_i, quad tilde("auditTS")_i
+//   $
 
-  and runs a memory-checking argument using the productcheck/grand-product GKR
+//   and runs a memory-checking argument using the productcheck/grand-product GKR
 
-  #show: later
+//   #show: later
 
-  Sub-table $hat(T)_i$ is of size $N^(1/c)$, small enough to instantiate concretely
+//   Sub-table $hat(T)_i$ is of size $N^(1/c)$, small enough to instantiate concretely
 
-  $Init_i union "WS"_i meq "RS"_i union "Audit"_i$
-]
+//   $Init_i union "WS"_i meq "RS"_i union "Audit"_i$
+// ]
 
 // ─────────────────────────────────────────────
 // Section 3: Efficiency
@@ -178,19 +202,22 @@
 #slide[
   = Prover Costs (Before Batching)
 
-  #set text(size: 0.82em)
-  #table(
-    columns: (auto, auto, auto),
-    stroke: none,
-    table.header([*Operation*], [*Polynomials*], [*Cost each*]),
-    table.hline(stroke: 0.5pt),
-    [Commit], [$tilde("nz")_i, tilde(e)_i, tilde("readTS")_i$], [$O(c dot k)$],
-    [Commit], [$tilde("auditTS")_i$], [$O(c dot N^(1/c))$],
-    [Eval proof], [$tilde("nz")_i, tilde(e)_i, tilde("readTS")_i$], [$O(c dot k)$],
-    [Eval proof], [$tilde("auditTS")_i$], [$O(c dot N^(1/c))$],
-    [Productchecks], [$"RS"_i, "WS"_i$], [$O(c dot k)$],
-    [Productchecks], [$"Init"_i, "Audit"_i$], [$O(c dot N^(1/c))$],
-    [Sumcheck], [$f_"Lasso"$], [$O(c dot k)$],
+  // #set text(size: 0.82em)
+  #align(center,
+    table(
+      columns: (auto, auto, auto),
+      stroke: none,
+      align: left + horizon,
+      table.header([*Operation*], [*Polynomials*], [*Cost each*]),
+      table.hline(stroke: 0.5pt),
+      [Commit], [$tilde("nz")_i, tilde(e)_i, tilde("readTS")_i$], [$O(c dot k)$],
+      [Commit], [$tilde("auditTS")_i$], [$O(c dot N^(1/c))$],
+      [Eval proof], [$tilde("nz")_i, tilde(e)_i, tilde("readTS")_i$], [$O(c dot k)$],
+      [Eval proof], [$tilde("auditTS")_i$], [$O(c dot N^(1/c))$],
+      [Productchecks], [$"RS"_i, "WS"_i$], [$O(c dot k)$],
+      [Productchecks], [$"Init"_i, "Audit"_i$], [$O(c dot N^(1/c))$],
+      [Sumcheck], [$f_"Lasso"$], [$O(c dot k)$],
+    )
   )
 
   #show: later
@@ -202,31 +229,49 @@
   Choose $c$ so that $N^(1/c) approx k$, cost scales with lookups $k$, not table size $N$
 ]
 
-#slide[
-  = Batching Techniques
+// #slide[
+//   = Batching Techniques
 
-  *Sumcheck batching:* combine $n$ sumchecks over the same domain with random $alpha$:
+//   *Sumcheck batching:* combine $n$ sumchecks over the same domain with random $alpha$:
 
-  $ sum_(i=1)^n alpha^(i-1) dot sigma_i meq sum_(vec(b)) sum_(i=1)^n alpha^(i-1) dot f_i(vec(b)) $
+//   $ sum_(i=1)^n alpha^(i-1) dot sigma_i meq sum_(vec(b)) sum_(i=1)^n alpha^(i-1) dot f_i(vec(b)) $
 
-  #show: later
+//   #show: later
 
-  *Eval proof batching:* with additively homomorphic commitments, batch $n$ openings at the same point:
+//   *Eval proof batching:* with additively homomorphic commitments, batch $n$ openings at the same point:
 
-  $
-    q(vec(x)) = sum_(i=1)^n alpha^(i-1) dot f_i(vec(x)), quad
-    "PCCheck"(C_q, d, vec(zeta), q(vec(zeta)), pi_q)
-  $
+//   $
+//     q(vec(x)) = sum_(i=1)^n alpha^(i-1) dot f_i(vec(x)), quad
+//     "PCCheck"(C_q, d, vec(zeta), q(vec(zeta)), pi_q)
+//   $
 
-  Reduces $O(n dot k)$ → $O(k)$, one opening proof for all
-]
+//   Reduces $O(n dot k)$ → $O(k)$, one opening proof for all
+// ]
 
 #slide[
   = Verifier Costs
 
   Let $lambda_k = lg^2(k) + lg(k)$ and $lambda_N = lg^2(N^(1/c)) + lg(N^(1/c))$
 
-  After batching:
+  #align(center,
+    table(
+      columns: (auto, auto, auto),
+      stroke: none,
+      align: left + horizon,
+      // row-gutter: 0.5em,
+      table.header([*Operation*], [*Polynomials*], [*Cost each*]),
+      table.hline(stroke: 0.5pt),
+      [Eval proof], [$tilde("nz")_i, tilde(e)_i, tilde("readTS")_i$], [$O(c dot lg(k))$],
+      [Eval proof], [$tilde("auditTS")_i$], [$O(c dot lg(N^(1/c)))$],
+      [Productcheck], [$"RS"_i, "WS"_i$], [$O(c dot lambda_k)$],
+      [Productcheck], [$"Init"_i, "Audit"_i$], [$O(c dot lambda_N)$],
+      [Sumcheck], [$f_"Lasso"$], [$O(c + lg(k))$],
+    )
+  )
+
+  #show: later
+
+  After *batching*:
 
   $
     O(underbrace(lg(k) + lg(N^(1/c)), "eval proofs") + underbrace(lambda_k + lambda_N, "productchecks") + underbrace(c + lg(k), "sumcheck"))
@@ -249,9 +294,9 @@
     stroke: none,
     table.header([*Sub-protocol*], [*Soundness error*]),
     table.hline(stroke: 0.5pt),
-    [Sumcheck over $lg(k)$ vars],      [$O(lg(k) \/ |Fb|)$],
-    [$4c$ productchecks],              [$O(c dot lg^2(m) \/ |Fb|)$],
-    [Memory checking ($c$ sub-tables)],[$O(c dot m \/ |Fb|)$],
+    [Sumcheck over $lg(k)$ vars],      [$O(frac(style: "horizontal", lg(k), |Fb|))$],
+    [$4c$ productchecks],              [$O(frac(style: "horizontal", c dot lg^2(m), |Fb|))$],
+    [Memory checking ($c$ sub-tables)],[$O(frac(style: "horizontal", c dot m, |Fb|))$],
   )
 
   #show: later
