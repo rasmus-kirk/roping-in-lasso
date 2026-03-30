@@ -50,9 +50,49 @@
 // #new-section[The Lasso Lookup Argument]
 
 #slide[
-  = Lookup as Matrix-Vector Product
+  = The Lookup Problem
 
-  $k$ lookups into a table $hat(T)$ of size $N$:
+  Prove a lookup into a table $hat(T)$ of size $N$ using memory-checking
+
+  *Problem:* $N$ may be too large to instantiate or commit to
+
+  #show: later
+
+  *From Spark:* the $eq$ decomposition avoided a similar issue:
+
+  $ eq(vec(x) || vec(y), row(vec(b)) || col(vec(b))) = eq(vec(x), row(vec(b))) dot eq(vec(y), col(vec(b))) $
+
+  Two separate RAMs of size $m$ instead of one of size $m^2$
+
+  #show: later
+
+  *Lasso's insight:* this decomposability trick is broadly useful, many real tables decompose similarly
+]
+
+#slide[
+  = Decomposable Tables
+
+  *Idea:* split one large table into $c$ smaller sub-tables of size $N^(1/c)$:
+
+  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_c[overline(vec(b))_c]) $
+
+  where $vec(b) = overline(vec(b))_1 || ... || overline(vec(b))_c$
+
+  #show: later
+
+  The sub-tables are small enough to instantiate and commit to concretely
+
+  For Spark: $g$ is *multiplication*
+
+  For other tables (e.g. range checks, bitwise ops): $g$ can be *bit-concatenation*:
+
+  $ g(v_1, ..., v_c) = sum_(i=1)^c v_i dot 2^(w(c-i)) $
+]
+
+#slide[
+  = Batching $k$ Lookups: Matrix-Vector Product
+
+  To prove $k$ lookups at once, model them as a matrix-vector product:
 
   $ vec(M) vec(t) = vec(a) $
 
@@ -82,39 +122,7 @@
 
   #show: later
 
-  *Problem:* $hat(T)$ may be astronomically large, e.g. $2^128$ for 64-bit XOR
-
-  We cannot instantiate or commit to such a table
-
-  #show: later
-
-  *Lasso's insight:* many useful tables are _decomposable_
-]
-
-#slide[
-  = Decomposable Tables
-
-  *Idea:* split one large table into $c$ smaller sub-tables of size $N^(1/c)$:
-
-  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_c[overline(vec(b))_c]) $
-
-  where $vec(b) = overline(vec(b))_1 || ... || overline(vec(b))_c$
-
-  #show: later
-
-  *Example:* 64-bit XOR with table size $2^128$
-  - Split into $c = 8$ sub-tables of size $2^16$
-  - $g$ = bit-concatenation: $sum_(i=1)^c v_i dot 2^(w(c-i))$, window $w = 16$
-
-  $
-    #text(size: 0.75em)[$"XOR"("0100_0001", "0010_0000")$]
-    = hat("XOR")_2(01_2, 00_2) || hat("XOR")_2(00_2, 10_2) || hat("XOR")_2(00_2, 00_2) || hat("XOR")_2(01_2, 00_2)
-    = 01_2 || 10_2 || 00_2 || 01_2
-  $
-
-  #show: later
-
-  For $eq$: decomposition uses *multiplication*, this is precisely what enabled Spark!
+  Since $hat(T)$ is decomposable, replace $hat(T)["nz"(vec(b))]$ with $g$ applied to $c$ sub-table lookups
 ]
 
 #slide[
