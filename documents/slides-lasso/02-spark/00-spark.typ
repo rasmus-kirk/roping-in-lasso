@@ -20,11 +20,11 @@
 
   #show: later
 
-  *Can't the verifier compute this themselves?*
+  *Ideas:*
 
-  - Naive direct evaluation: iterate over $m^2$ entries ($O(m^2)$)
-  - Smart direct evaluation: iterate only over nonzero entries ($O(n)$)
-  - Standard PCS opening proof: $O(m^2)$ prover time
+  - Iterate over $m^2$ entries? ($O(m^2)$)
+  - Iterate only over nonzero entries? ($O(n)$)
+  - Standard PCS opening proof? $O(m^2)$ prover time
 
   #show: later
 
@@ -52,17 +52,17 @@
 
   *Idea:* model $e_"row"$ and $e_"col"$ as reads from a trusted RAM
 
-  If the prover can _prove_ correct RAM access → evaluation is verified
+  If the prover can _prove_ correct RAM access then evaluation is verified
 ]
 
 // ─────────────────────────────────────────────
 // Section 2: Offline Memory Checking
 // ─────────────────────────────────────────────
 
-#new-section[Offline Memory Checking]
+// #new-section[Offline Memory Checking]
 
 #slide[
-  = RAM Model
+  = Offline Memory Checking
 
   RAM as a list of _(address, value, timestamp)_ tuples:
 
@@ -70,23 +70,27 @@
 
   #show: later
 
-  $prover$ controls the RAM; $verifier$ reads and writes via protocols:
+  - $prover$ controls the RAM
+  - $verifier$ reads and writes via protocols, with local sets $WS, RS$ and a timestamp $ts$
 
-  *Read$(a)$:*
-  + $prover -> verifier$: value $v_"read"$ and timestamp $t$
-  + $verifier$: adds $(a, v_"read", t)$ to $RS$
-  + $verifier$: sets $t_s <- max(t_s, t) + 1$, adds $(a, v_"read", t_s)$ to $WS$
-  + $verifier -> prover$: $(a, v_"read", t_s)$
+  #pseudocode(title: "Read", args: ($a$,), [
+    #let arrow_len = context $#h(measure($prover --> verifier$).width - measure($verifier$).width)$
+    + $prover --> verifier$: $verifier$ receives $v_"read"$ and timestamp $t$ from $prover$.\
+    + $#arrow_len verifier$: $verifier$ adds the tuple $(a, v_"read", t)$ to its local set $RS$.\
+    + $#arrow_len verifier$: $verifier$ updates $ts_("new") <- max(ts, t) + 1$.\
+    + $#arrow_len verifier$: $verifier$ adds new tuple $(a, v_"read", ts_("new"))$ to $WS$.\
+    + $verifier --> prover$: $verifier$ sends $(a, v_"read", ts_("new"))$ back to $prover$.\
+  ])
 ]
 
 #slide[
   = The Four Sets
 
   $
-    &Init  &&= { (a, v_"init", 0) }           &&quad "initial writes" \
-    &RS    &&= { (a, v_"read", t) }            &&quad "read set" \
-    &WS    &&= { (a, v, t_s) }                 &&quad "write set" \
-    &Audit &&= { (a, v_"final", t_"final") }   &&quad "final read pass"
+    &Init  &&= { (a, v_"initial", 0) }        &&#h(1em) "Initial write of all values to the RAM." \
+    &RS    &&= { (a, v_"read", t) }           &&#h(1em) "The tuples taken from RAM." \
+    &WS    &&= { (a, v, ts_("new")) }         &&#h(1em) "The tuples put back into RAM." \
+    &Audit &&= { (a, v_"final", t_"final") }  &&#h(1em) "Read pass on final state of the RAM."
   $
 
   #show: later
@@ -110,11 +114,10 @@
 
   #show: later
 
-  *Why?* Two ways a prover could cheat:
+  *Why?* Only two ways a prover could cheat:
 
-  + *Fake value:* $(a, v_"fake", t)$ added to $RS$, but never in $WS$ → check fails
-
-  + *Old value:* $(a, v_"old", t_"old")$ added to $RS$ twice, but $WS$ has it only once → check fails
+  + *Fake value:* $(a, v_"fake", t)$ added to $RS$, but never in $WS$.
+  + *Old value:* $(a, v_"old", t_"old")$ added to $RS$ twice, but $WS$ has it only once.
 
   #show: later
 
@@ -125,57 +128,53 @@
 // Section 3: Proving Multiset Equality
 // ─────────────────────────────────────────────
 
-#new-section[Proving Multiset Equality]
+// #new-section[Proving Multiset Equality]
 
-#slide[
-  = Tuple Equality
+// #slide[
+//   = Tuple Equality
 
-  *Lemma:* to prove $vec(a) = vec(b)$ (element-wise), check for random $alpha inrand Fb$:
+//   *Lemma:* to prove $vec(a) = vec(b)$ (element-wise), check for random $alpha inrand Fb$:
 
-  $ sum^n_(i=1) alpha^(i-1) dot a_i meq sum^n_(i=1) alpha^(i-1) dot b_i $
+//   $ sum^n_(i=1) alpha^(i-1) dot a_i meq sum^n_(i=1) alpha^(i-1) dot b_i $
 
-  Soundness error: $frac(n-1, |Fb|)$
+//   Soundness error: $frac(n-1, |Fb|)$
 
-  #show: later
+//   #show: later
 
-  *Proof:* each side is a degree-$n$ univariate polynomial in $alpha$ with coefficients $vec(a)$ resp. $vec(b)$. If they differ, Schwartz-Zippel bounds the collision probability.
-]
+//   *Proof:* each side is a degree-$n$ univariate polynomial in $alpha$ with coefficients $vec(a)$ resp. $vec(b)$. If they differ, Schwartz-Zippel bounds the collision probability.
+// ]
 
-#slide[
-  = Multiset Equality
+// #slide[
+//   = Multiset Equality
 
-  *Lemma:* to prove $F = G$ as multisets, check for random $beta inrand Fb$:
+//   *Lemma:* to prove $F = G$ as multisets, check for random $beta inrand Fb$:
 
-  $
-    product_(vec(b) in bits^(ceil(lg(n)))) tilde(f)(vec(b)) - beta
-    meq
-    product_(vec(b) in bits^(ceil(lg(n)))) tilde(g)(vec(b)) - beta
-  $
+//   $
+//     product_(vec(b) in bits^(ceil(lg(n)))) tilde(f)(vec(b)) - beta
+//     meq
+//     product_(vec(b) in bits^(ceil(lg(n)))) tilde(g)(vec(b)) - beta
+//   $
 
-  Soundness error: $frac(n-1, |Fb|)$
+//   Soundness error: $frac(n-1, |Fb|)$
 
-  #show: later
+//   #show: later
 
-  *Proof:* both sides are univariate polynomials in $beta$ whose roots are the elements of $F$ resp. $G$. Equal polynomials $==>$ equal multisets.
+//   *Proof:* both sides are univariate polynomials in $beta$ whose roots are the elements of $F$ resp. $G$. Equal polynomials $==>$ equal multisets.
 
-  #show: later
+//   #show: later
 
-  *Excellent use-case for the specialized GKR grand product!*
-]
+//   *Excellent use-case for the specialized GKR grand product!*
+// ]
 
 #slide[
   = Proving $Init union WS = RS union Audit$
 
-  Combine tuple equality (for entries) and multiset equality, with challenges $alpha, beta$:
+  Use the productcheck to check:
 
   $
-    h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta)
-       meq product_((a, v, t) in Init union WS)  (a + alpha v + alpha^2 t - beta)
+    &h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta) \
+    &h meq product_((a, v, t) in Init union WS)  (a + alpha v + alpha^2 t - beta)
   $
-
-  #show: later
-
-  Each grand product is computed via the specialized GKR protocol from the last lecture
 ]
 
 // ─────────────────────────────────────────────
@@ -193,108 +192,89 @@
 
   *Simplification:* replace global timestamps with _per-address counters_
 
-  - $"writeTS" = "readTS" + 1$ always holds → no need to commit to $"writeTS"$
-  - Reduces the number of committed polynomials
-
-  #show: later
-
-  Two RAMs: one for *row indices*, one for *column indices*
-
-  $
-    "mem"_"row"[i] = tilde("eq")(vec(zeta), "toBits"(i)), quad
-    "mem"_"col"[i] = tilde("eq")(vec(eta), "toBits"(i))
-  $
+  - $"writeTS" = "readTS" + 1$ no need to commit to $"writeTS"$
 ]
 
 #slide[
   = RAM Polynomials
 
-  For all $i in [0, m-1]$ define the RAM contents:
+  $forall i in [0, m-1], j in [0, n-1]$ define $vec(i) = toBits(i), vec(j) = toBits(j)$:
 
   $
-    tilde("id")("toBits"(i))       &= i \
-    tilde("zero")("toBits"(i))     &= 0 \
-    tilde("mem")_"row"("toBits"(i)) &= tilde("eq")(vec(zeta), "toBits"(i)) \
-    tilde("mem")_"col"("toBits"(i)) &= tilde("eq")(vec(eta),  "toBits"(i))
-  $
-
-  #show: later
-
-  For all $i in [0, n-1]$ (the nonzero entries):
-
-  $
-    tilde("row")("toBits"(i)) &= "row"_i \
-    tilde("col")("toBits"(i)) &= "col"_i
-  $
-]
-
-#slide[
-  = The Row Memory-Check Polynomials
-
-  $
-    Init_"row"(vec(x))  &= tilde("id")(vec(x)) + alpha dot tilde("mem")_"row"(vec(x)) + alpha^2 dot tilde("zero")(vec(x)) - beta \
-    RS_"row"(vec(x))    &= tilde("row")(vec(x)) + alpha dot e_"row"(vec(x))            + alpha^2 dot tilde("readTS")_"row"(vec(x)) - beta \
-    WS_"row"(vec(x))    &= tilde("row")(vec(x)) + alpha dot e_"row"(vec(x))            + alpha^2 dot (tilde("readTS")_"row"(vec(x)) + 1) - beta \
-    Audit_"row"(vec(x)) &= tilde("id")(vec(x)) + alpha dot tilde("mem")_"row"(vec(x)) + alpha^2 dot tilde("auditTS")_"row"(vec(x)) - beta
+    tilde(id)(vec(i))        &= i                              quad &&tilde("zero")(vec(i))        &&= 0 \
+    tilde(mem)_(row)(vec(i)) &= tilde("eq")(vec(zeta), vec(i)) quad &&tilde("mem")_("col")(vec(i)) &&= tilde("eq")(vec(eta),  vec(i)) \
+    tilde("row")(vec(j))     &= "row"_j,                       quad &&tilde("col")(vec(j))         &&= "col"_j
   $
 
   #show: later
 
-  Grand product check (same for column RAM):
+  Then:
 
   $
-    product_(vec(b) in bits^(ceil(lg(m)))) Init_"row"(vec(b)) dot product_(vec(b) in bits^(ceil(lg(n)))) WS_"row"(vec(b))
-    meq
-    product_(vec(b) in bits^(ceil(lg(m)))) Audit_"row"(vec(b)) dot product_(vec(b) in bits^(ceil(lg(n)))) RS_"row"(vec(b))
+    Init_(row)(vec(x))  &= tilde("id")(vec(x)) &&+ alpha dot tilde("mem")_(row)(vec(x)) &&+ alpha^2 dot tilde("zero")(vec(x)) - beta \
+    RS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))            &&+ alpha^2 dot tilde("readTS")_(row)(vec(x)) - beta \
+    WS_(row)(vec(x))    &= tilde(row)(vec(x))  &&+ alpha dot e_(row)(vec(x))            &&+ alpha^2 dot (tilde("readTS")_(row)(vec(x)) + 1) - beta \
+    Audit_(row)(vec(x)) &= tilde("id")(vec(x)) &&+ alpha dot tilde("mem")_(row)(vec(x)) &&+ alpha^2 dot tilde("auditTS")_(row)(vec(x)) - beta
   $
 ]
 
 #slide[
-  = Final Evaluation in the Grand Product
+  = Memory Check
 
-  At the end of the grand product argument, verifier evaluates at random $vec(r)$
+  Productcheck (same for column RAM):
 
-  *Verifier can compute in $O(lg(m))$:*
   $
-    tilde("mem")_"row"(vec(r)) &= tilde("eq")_(vec(zeta))(vec(r)) \
-    tilde("zero")(vec(r))       &= 0 \
-    tilde("id")(vec(r))         &= sum_(j=1)^(lg(m)) r_j dot 2^(lg(m) - j)
+    h &meq product_(vec(b) in bits^(ceil(lg(m)))) Init_(row)(vec(b))  &&dot product_(vec(b) in bits^(ceil(lg(n)))) WS_(row)(vec(b)) \
+    h &meq product_(vec(b) in bits^(ceil(lg(m)))) Audit_(row)(vec(b)) &&dot product_(vec(b) in bits^(ceil(lg(n)))) RS_(row)(vec(b))
   $
-
-  #show: later
-
-  *Prover provides PCS openings for:*
-  - $tilde("row")(vec(r)), tilde("col")(vec(r))$ — committed during setup
-  - $tilde("readTS")_"row"(vec(r)), tilde("readTS")_"col"(vec(r))$ — committed during setup
-  - $tilde("auditTS")_"row"(vec(r)), tilde("auditTS")_"col"(vec(r))$ — committed during setup
-  - $e_"row"(vec(r)), e_"col"(vec(r))$ — committed during open (prover is trusted via OMC)
 ]
 
-#slide[
-  = Spark: Summary
+// #slide[
+//   = Final Evaluation in the Grand Product
 
-  #set text(size: 0.9em)
+//   At the end of the grand product argument, verifier evaluates at random $vec(r)$
 
-  #table(
-    columns: (auto, 1fr),
-    stroke: none,
-    table.header([*Component*], [*Role*]),
-    table.hline(stroke: 0.5pt),
-    [Sparse sum], [Express $tilde(M)(vec(zeta), vec(eta))$ as sumcheck over $n$ terms],
-    [OMC],        [Prove prover used the RAM honestly],
-    [Grand product], [Prove multiset equality ($Init union WS = RS union Audit$)],
-    [Dense PCS],  [Open committed polynomials $tilde("val"), tilde("row"), tilde("col"), ...$],
-    [Sumcheck],   [Reduce to evaluations of $tilde("val"), tilde(e)_"row", tilde(e)_"col"$],
-  )
+//   *Verifier can compute in $O(lg(m))$:*
+//   $
+//     tilde("mem")_"row"(vec(r)) &= tilde("eq")_(vec(zeta))(vec(r)) \
+//     tilde("zero")(vec(r))       &= 0 \
+//     tilde("id")(vec(r))         &= sum_(j=1)^(lg(m)) r_j dot 2^(lg(m) - j)
+//   $
 
-  #show: later
+//   #show: later
 
-  *End-to-end prover cost: $O(n + m)$*
+//   *Prover provides PCS openings for:*
+//   - $tilde("row")(vec(r)), tilde("col")(vec(r))$ — committed during setup
+//   - $tilde("readTS")_"row"(vec(r)), tilde("readTS")_"col"(vec(r))$ — committed during setup
+//   - $tilde("auditTS")_"row"(vec(r)), tilde("auditTS")_"col"(vec(r))$ — committed during setup
+//   - $e_"row"(vec(r)), e_"col"(vec(r))$ — committed during open (prover is trusted via OMC)
+// ]
 
-  Looking up memory cells $->$ Lookup Argument #emoji.face.think Lasso next!
-]
+// #slide[
+//   = Spark: Summary
 
-#slide[
-  #show: focus
-  Lasso
-]
+//   #set text(size: 0.9em)
+
+//   #table(
+//     columns: (auto, 1fr),
+//     stroke: none,
+//     table.header([*Component*], [*Role*]),
+//     table.hline(stroke: 0.5pt),
+//     [Sparse sum], [Express $tilde(M)(vec(zeta), vec(eta))$ as sumcheck over $n$ terms],
+//     [OMC],        [Prove prover used the RAM honestly],
+//     [Grand product], [Prove multiset equality ($Init union WS = RS union Audit$)],
+//     [Dense PCS],  [Open committed polynomials $tilde("val"), tilde("row"), tilde("col"), ...$],
+//     [Sumcheck],   [Reduce to evaluations of $tilde("val"), tilde(e)_"row", tilde(e)_"col"$],
+//   )
+
+//   #show: later
+
+//   *End-to-end prover cost: $O(n + m)$*
+
+//   Looking up memory cells $->$ Lookup Argument #emoji.face.think Lasso next!
+// ]
+
+// #slide[
+//   #show: focus
+//   Lasso
+// ]

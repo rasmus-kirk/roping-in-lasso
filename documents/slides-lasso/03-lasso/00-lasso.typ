@@ -14,7 +14,7 @@
 
   $ tilde("val"), tilde("row"), tilde("col"), tilde("readTS")_"row", tilde("readTS")_"col", tilde("auditTS")_"row", tilde("auditTS")_"col" $
 
-  Fine for Spartan — but not for a general-purpose sparse PCS
+  Fine for Spartan, but not for a general-purpose sparse PCS
 
   #show: later
 
@@ -22,36 +22,32 @@
 
   #show: later
 
-  *Obstacle:* if the prover controls the timestamps, can they cheat the memory check?
+  *Obstacle:* if the prover controls the timestamps, can't they cheat the memory check?
 
   #show: later
 
-  *Lasso's first result:* No — Spark is secure with prover-committed timestamps
+  *Lasso's first result:* No, Spark is secure _even with prover-committed timestamps_.
 ]
 
 #slide[
   = Read-Consistency with Local Counters
 
-  *Theorem:* using local per-address counters and $"WS" = {(a,v,t+1) mid (a,v,t) in "RS"}$, the multiset equality check $Init union "WS" = "RS" union "Audit"$ enforces read-consistency with probability one
+  *Proof sketch:* suppose an invalid read $(a, v^*, t) in "RS"$ with $v^* != "RAM"[a]$. It must appear in $Init union "WS"$:
 
-  #show: later
-
-  *Proof sketch* — suppose an invalid read $(a, v^*, t) in "RS"$ with $v^* != "RAM"[a]$. It must appear in $Init union "WS"$:
-
-  + *In $Init$:* impossible — $Init$ contains $(a, "RAM"[a], 0)$ only
+  + *In $Init$:* impossible, $Init$ contains only $(a, "RAM"[a], 0)$
 
   + *In $"WS"$:* then a "parent" $(a, v^*, t-1) in "RS"$ must exist
 
   #show: later
 
-  Chasing the chain down: $(a, v^*, 0)$ must appear in $Init$, but $v^* != "RAM"[a]$ — contradiction
+  Going down the chain, $(a, v^*, 0)$ must appear in $Init$, but $v^* != "RAM"[a]$, thus we have a contradiction.
 ]
 
 // ─────────────────────────────────────────────
 // Section 2: The Lookup Argument
 // ─────────────────────────────────────────────
 
-#new-section[The Lasso Lookup Argument]
+// #new-section[The Lasso Lookup Argument]
 
 #slide[
   = Lookup as Matrix-Vector Product
@@ -86,7 +82,7 @@
 
   #show: later
 
-  *Problem:* $hat(T)$ may be astronomically large — e.g. $2^128$ for 64-bit XOR
+  *Problem:* $hat(T)$ may be astronomically large, e.g. $2^128$ for 64-bit XOR
 
   We cannot instantiate or commit to such a table
 
@@ -118,7 +114,7 @@
 
   #show: later
 
-  For $eq$: decomposition uses *multiplication* — this is precisely what enabled Spark!
+  For $eq$: decomposition uses *multiplication*, this is precisely what enabled Spark!
 ]
 
 #slide[
@@ -160,7 +156,7 @@
 
   #show: later
 
-  Sub-table $hat(T)_i$ is of size $N^(1/c)$ — small enough to instantiate concretely
+  Sub-table $hat(T)_i$ is of size $N^(1/c)$, small enough to instantiate concretely
 
   $Init_i union "WS"_i meq "RS"_i union "Audit"_i$
 ]
@@ -195,7 +191,7 @@
 
   $ O(c dot k + c dot N^(1/c)) $
 
-  Choose $c$ so that $N^(1/c) approx k$ — cost scales with lookups $k$, not table size $N$
+  Choose $c$ so that $N^(1/c) approx k$, cost scales with lookups $k$, not table size $N$
 ]
 
 #slide[
@@ -214,7 +210,7 @@
     "PCCheck"(C_q, d, vec(zeta), q(vec(zeta)), pi_q)
   $
 
-  Reduces $O(n dot k)$ → $O(k)$ — one opening proof for all
+  Reduces $O(n dot k)$ → $O(k)$, one opening proof for all
 ]
 
 #slide[

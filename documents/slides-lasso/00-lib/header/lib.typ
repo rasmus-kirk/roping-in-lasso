@@ -1,6 +1,7 @@
 #import "@preview/gruvy:2.1.0": gruvbox, theme-colors, colors
 #import "@preview/theorion:0.4.1": *
 #import "@preview/zebraw:0.6.0": *
+#import "@preview/lovelace:0.3.0": *
 #import cosmos.clouds: *
 #import cosmos.clouds: render-fn as render-fn2
 
@@ -41,6 +42,41 @@
     print: true,
 )
 #show ref: set text(fill: theme.fg1)
+
+#let pseudocode(title: none, args: (), content) = {
+  let header = if args.len() > 0 {
+    let temp = args
+      .enumerate()
+      .map(it => $#it.at(1)$ )
+      .join(", ")
+
+    $#smallcaps(title)\(#temp)$
+  } else if title != none {
+    $#smallcaps(title)$
+  } else {
+    none
+  }
+
+  align(center)[
+    #box(
+      block(
+        fill: theme.bg0.lighten(30%),
+        inset: 1em,
+        stroke: stroke(paint: theme.fg4),
+        radius: 4pt,
+        pseudocode-list(
+          line-numbering: "1:",
+          booktabs: title != none,
+          stroke: 1pt + theme.fg4.lighten(30%),
+          booktabs-stroke: 2pt + theme.fg2,
+          title: header,
+          content
+        )
+      )
+    )
+  ]
+}
+
 
 // Math
 #let meq = math.eq.quest;
