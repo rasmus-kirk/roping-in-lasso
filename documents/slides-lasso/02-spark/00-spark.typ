@@ -98,7 +98,7 @@
 
   #show: later
 
-  *Correctness check:*
+  *Verifying check:*
 
   $ Init union WS meq RS union Audit $
 
@@ -192,18 +192,18 @@
   - $"writeTS" = "readTS" + 1$ no need to commit to $"writeTS"$
 ]
 
-#slide[
-  = Proving $Init union WS = RS union Audit$
+// #slide[
+//   = Proving $Init union WS = RS union Audit$
 
-  In a SNARK context we use polynomials...
+//   In a SNARK context we use polynomials...
   
-  Use the productcheck to check:
+//   Use the productcheck to check:
 
-  $
-    &h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta) \
-    &h meq product_((a, v, t) in Init union WS)  (a + alpha v + alpha^2 t - beta)
-  $
-]
+//   $
+//     &h meq product_((a, v, t) in RS union Audit) (a + alpha v + alpha^2 t - beta) \
+//     &h meq product_((a, v, t) in Init union WS)  (a + alpha v + alpha^2 t - beta)
+//   $
+// ]
 
 
 #slide[

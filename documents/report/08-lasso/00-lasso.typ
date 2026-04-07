@@ -116,6 +116,7 @@ memory-checking argument would take time $O(n + m^2)$, ruining our hopes
 for a sparse polynomial commitment scheme. Luckily, we were able to decompose
 $eq$ using the identity:
 broadly
+
 $ eq(vec(x) || vec(y), row(vec(b)) || col(vec(b))) = eq(vec(x), row(vec(b))) dot eq(vec(y), col(vec(b))) $
 
 A primary insight of Lasso was that this trick is broadly useful. Suppose we

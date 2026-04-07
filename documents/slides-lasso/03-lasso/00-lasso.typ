@@ -89,29 +89,29 @@
   $ g(v_1, ..., v_c) = sum_(i=1)^c v_i dot 2^(w(c-i)) $
 ]
 
-#slide[
-  = A Single Lookup Argument
+// #slide[
+//   = A Single Lookup Argument
 
-  With decomposable tables, we already have a complete single-lookup argument:
+//   With decomposable tables, we already have a complete single-lookup argument:
 
-  #show: later
+//   #show: later
 
-  + Run $c$ independent Spark-style memory checks — one per sub-table $hat(T)_i$
+//   + Run $c$ independent Spark-style memory checks — one per sub-table $hat(T)_i$
 
-  #show: later
+//   #show: later
 
-  + Each sub-table has size $N^(1/c)$, small enough to instantiate concretely
+//   + Each sub-table has size $N^(1/c)$, small enough to instantiate concretely
 
-  #show: later
+//   #show: later
 
-  + The verifier recomposes the result using $g$:
+//   + The verifier recomposes the result using $g$:
 
-  $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_(c)[overline(vec(b))_c]) $
+//   $ hat(T)[vec(b)] = g(hat(T)_1[overline(vec(b))_1], ..., hat(T)_(c)[overline(vec(b))_c]) $
 
-  #show: later
+//   #show: later
 
-  *But Lasso goes further:* we can batch $k$ lookups into a single argument
-]
+//   *But Lasso goes further:* we can batch $k$ lookups into a single argument
+// ]
 
 #slide[
   = Batching $k$ Lookups: Matrix-Vector Product
@@ -134,7 +134,7 @@
 ]
 
 #slide[
-  = Sparse Lookup Identity
+  = Batching $k$ Lookups
 
   Since $vec(M)$ has exactly one nonzero per row, the sum simplifies:
 
@@ -197,10 +197,10 @@
 // Section 3: Efficiency
 // ─────────────────────────────────────────────
 
-#new-section[Efficiency]
+// #new-section[Efficiency]
 
 #slide[
-  = Prover Costs (Before Batching)
+  = Prover Costs
 
   // #set text(size: 0.82em)
   #align(center,
